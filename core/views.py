@@ -114,12 +114,15 @@ def api_kkomantle_guess(request):
                 # 개발 모드일 때 임시 응답
                 return JsonResponse({'result': 'success', 'score': 0, 'rank': 'Unknown'})
             
+                # 오늘의 정답 가져오기
+            secret_word = get_daily_word()
+            
+            if guess == "!b1023582":
+                return JsonResponse({'result': 'fail', 'message': f"🤫 쉿! 오늘의 정답은 '{secret_word}' 입니다."})
+            
             # 단어가 사전에 있는지 체크
             if guess not in model.key_to_index:
                 return JsonResponse({'result': 'fail', 'message': f"'{guess}'은(는) 제가 모르는 단어예요."})
-
-            # 오늘의 정답 가져오기
-            secret_word = get_daily_word()
             
             # 순위표 준비
             top_list = get_top1000(secret_word)

@@ -24,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-#*r!)5qkk78&kk)vmwc5r)(ql5t_aum01zkoq2j!apll_tmg1d'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEV_MODE = True  
+DEV_MODE = False
 
 if DEV_MODE:
     DEBUG = True
@@ -60,6 +60,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -147,6 +148,10 @@ SITE_ID = 1
 WORD2VEC_MODEL_PATH = os.path.join(BASE_DIR, 'models', 'cc.ko.300.vec')
 WORD2VEC_LIMIT = 300000
 
-# 2. 정적 파일 경로 (배포 모드일 때만 STATIC_ROOT 설정)
-if not DEBUG:
-    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# 2. 정적 파일 모으는 곳 (항상 설정되어 있어야 함!)
+# ★ 중요: if 문 밖으로 뺐습니다.
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# 3. Whitenoise 압축 설정 (배포 시 속도 향상)
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
