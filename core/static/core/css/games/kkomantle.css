@@ -1,0 +1,43 @@
+.game-container { max-width: 600px; margin: 0 auto; padding: 20px; font-family: 'Pretendard', sans-serif; }
+
+.header-box { text-align: center; margin-bottom: 30px; }
+.header-box h1 { font-size: 2.5rem; margin-bottom: 10px; }
+.header-box p { color: #666; }
+
+/* 입력창 스타일 */
+.input-group { display: flex; gap: 10px; position: sticky; top: 20px; background: rgba(255,255,255,0.95); padding: 15px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); backdrop-filter: blur(10px); z-index: 100; }
+.input-group input { flex: 1; padding: 15px; font-size: 1.1rem; border: 2px solid #e0e0e0; border-radius: 12px; transition: all 0.3s; }
+.input-group input:focus { border-color: #4A90E2; outline: none; }
+.input-group button { padding: 0 25px; background: #4A90E2; color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 1rem; transition: background 0.3s; }
+.input-group button:hover { background: #357ABD; }
+.input-group button:disabled { background: #ccc; cursor: not-allowed; }
+
+/* 리스트 스타일 */
+.table-header { display: flex; justify-content: space-between; padding: 15px 20px; color: #888; font-size: 0.9rem; font-weight: bold; border-bottom: 2px solid #f0f0f0; margin-top: 20px; }
+.guess-list { list-style: none; padding: 0; margin: 0; padding-bottom: 100px; }
+
+.guess-item { display: flex; align-items: center; padding: 15px 20px; background: white; margin-bottom: 8px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); animation: slideIn 0.3s ease; border-left: 6px solid #ccc; }
+
+/* 온도 색상 (Hot -> Cold) */
+.rank-hot { border-left-color: #FF3B30; background-color: #FFF5F5; } /* 1~1000위 */
+.rank-cold { border-left-color: #8E8E93; } /* 1000위 밖 */
+.rank-correct { border-left-color: #34C759; background-color: #F2FBF5; border: 2px solid #34C759; } /* 정답 */
+
+.word-col { flex: 1; font-weight: bold; font-size: 1.1rem; }
+.score-col { width: 80px; text-align: right; font-weight: bold; }
+.rank-col { width: 80px; text-align: right; color: #666; font-size: 0.9rem; }
+
+/* 진행바 (유사도 시각화) */
+.progress-bg { height: 6px; width: 60px; background: #eee; border-radius: 3px; margin-right: 15px; overflow: hidden; }
+.progress-fill { height: 100%; background: #ccc; width: 0%; transition: width 0.5s; }
+.rank-hot .progress-fill { background: #FF3B30; }
+.rank-correct .progress-fill { background: #34C759; }
+
+/* 성공 모달 (공유하기 버튼) */
+.success-modal { display: none; text-align: center; margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 15px; border: 1px solid #ddd; animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+.success-modal h2 { margin: 0 0 10px 0; color: #333; }
+.share-btn { background: #34C759; color: white; border: none; padding: 12px 24px; border-radius: 25px; font-size: 1rem; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: transform 0.2s; }
+.share-btn:hover { background: #248a3d; transform: scale(1.05); }
+
+@keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes popIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }

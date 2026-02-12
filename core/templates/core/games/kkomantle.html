@@ -1,0 +1,49 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}꼬맨틀 - 의미를 찾는 게임{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'core/css/games/kkomantle.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="game-container">
+    <div class="header-box">
+        <h1>🧩 꼬맨틀</h1>
+        <p>오늘의 단어를 찾아보세요!</p>
+    </div>
+
+    <div id="successArea" class="success-modal">
+        <h2>🎉 정답입니다!</h2>
+        <p><span id="finalCount">0</span>번 만에 맞추셨네요!</p>
+        <button class="share-btn" onclick="shareResult()">
+            📤 결과 복사하기
+        </button>
+    </div>
+
+    <div class="input-group">
+        <input type="text" id="wordInput" placeholder="단어를 입력하세요" autocomplete="off">
+        <button id="submitBtn" onclick="submitGuess()">추측하기</button>
+    </div>
+
+    <div class="table-header">
+        <span style="flex:1">단어</span>
+        <span style="width: 140px; text-align:right">유사도 / 순위</span>
+    </div>
+
+    <ul id="guessList" class="guess-list">
+        </ul>
+</div>
+{% endblock %}
+
+{% block extra_script %}
+<script>
+    const GAME_CONFIG = {
+        apiUrl: "{% url 'api_kkomantle_guess' %}",
+        csrfToken: "{{ csrf_token }}"
+    };
+</script>
+
+<script src="{% static 'core/js/games/kkomantle.js' %}"></script>
+{% endblock %}

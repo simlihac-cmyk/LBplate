@@ -11,6 +11,15 @@
     </div>
 
     <div class="game-grid">
+        <a href="{% url 'game_kkomantle' %}" class="game-card active featured">
+            <div class="game-icon">🧩</div>
+            <div class="game-info">
+                <h3>꼬맨틀 (Kkomantle) <span class="new-badge">NEW</span></h3>
+                <p>AI가 생각하는 단어의 의미를 맞춰보세요. <br>오늘의 비밀 단어는 무엇일까요?</p>
+                <span class="status-badge play">Play Now →</span>
+            </div>
+        </a>
+
         <a href="{% url 'game_2048' %}" class="game-card active">
             <div class="game-icon">🔢</div>
             <div class="game-info">
@@ -20,19 +29,22 @@
             </div>
         </a>
 
-        <a href="{% url 'game_wordle' %}" class="game-card"> <div class="game-icon">🔤</div>
+        <a href="{% url 'game_wordle' %}" class="game-card active">
+            <div class="game-icon">🔤</div>
             <div class="game-info">
                 <h3>Wordle</h3>
-                <p>5글자 단어를 추리하세요. 무제한 플레이 모드!</p>
+                <p>5글자 영어 단어를 추리하세요. 무제한 모드!</p>
                 <span class="status-badge play">Play Now →</span>
             </div>
         </a>
 
-        <a href="{% url 'game_reaction' %}" class="game-card"> <div class="game-icon">⚡</div>
+        <a href="{% url 'game_reaction' %}" class="game-card active">
+            <div class="game-icon">⚡</div>
             <div class="game-info">
                 <h3>Reaction</h3>
                 <p>당신의 반응속도는 몇 ms? 순발력 테스트</p>
-                <span class="status-badge play">Play Now →</span> </div>
+                <span class="status-badge play">Play Now →</span>
+            </div>
         </a>
     </div>
 </div>
@@ -42,6 +54,7 @@
         max-width: 800px;
         margin: 40px auto;
         padding: 0 20px;
+        font-family: 'Pretendard', sans-serif;
     }
 
     .lobby-header {
@@ -49,7 +62,7 @@
         margin-bottom: 40px;
     }
     .lobby-header h1 { font-size: 2.5rem; font-weight: 800; margin-bottom: 10px; }
-    .lobby-header p { color: var(--text-dim); }
+    .lobby-header p { color: #666; }
 
     .game-grid {
         display: grid;
@@ -58,62 +71,78 @@
     }
 
     .game-card {
-        background: rgba(255, 255, 255, 0.6);
+        background: rgba(255, 255, 255, 0.8);
         backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.5);
+        border: 1px solid rgba(0,0,0,0.05);
         border-radius: 24px;
         padding: 24px;
         display: flex;
         align-items: center;
         gap: 24px;
         text-decoration: none;
-        color: var(--text-main);
-        transition: all 0.3s ease;
+        color: #333;
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         box-shadow: 0 4px 6px rgba(0,0,0,0.05);
     }
 
     .game-icon {
         font-size: 3rem;
         background: white;
-        width: 80px;
+        min-width: 80px;
         height: 80px;
         display: flex;
         justify-content: center;
         align-items: center;
         border-radius: 20px;
-        box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.08);
     }
 
-    .game-info h3 { margin: 0 0 5px 0; font-size: 1.4rem; }
-    .game-info p { margin: 0 0 15px 0; color: var(--text-dim); font-size: 0.95rem; }
+    .game-info h3 { margin: 0 0 5px 0; font-size: 1.4rem; display: flex; align-items: center; gap: 8px; }
+    .game-info p { margin: 0 0 15px 0; color: #666; font-size: 0.95rem; line-height: 1.4; }
 
-    /* 활성화 된 카드 스타일 */
+    /* 활성화 된 카드 호버 효과 */
     .game-card.active:hover {
         transform: translateY(-5px);
         background: white;
-        box-shadow: 0 12px 24px rgba(0, 122, 255, 0.15);
-        border-color: var(--accent-color);
+        box-shadow: 0 15px 30px rgba(0, 122, 255, 0.15);
+        border-color: #4A90E2;
     }
+
     .status-badge {
         font-size: 0.8rem; font-weight: 700; 
         padding: 6px 12px; border-radius: 20px;
         background: #e9ecef; color: #868e96;
+        display: inline-block;
     }
     .status-badge.play {
-        background: var(--accent-color); color: white;
+        background: #4A90E2; color: white;
     }
 
-    /* 잠긴 카드 스타일 */
-    .game-card.locked {
-        opacity: 0.7;
-        cursor: not-allowed;
-        filter: grayscale(0.5);
+    /* NEW 뱃지 스타일 */
+    .new-badge {
+        background: #FF3B30; color: white;
+        font-size: 0.7rem; padding: 2px 6px;
+        border-radius: 6px; vertical-align: middle;
+    }
+
+    /* 꼬맨틀 강조 스타일 */
+    .game-card.featured {
+        background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+        border: 2px solid #4A90E2;
     }
 
     @media (min-width: 768px) {
         .game-grid { grid-template-columns: repeat(2, 1fr); }
-        /* 첫 번째 카드(2048)를 가로로 길게 쓰기 (선택사항) */
-        .game-card:first-child { grid-column: span 2; }
+        
+        /* 꼬맨틀(첫 번째 카드)을 가로로 꽉 채우기 */
+        .game-card:first-child { 
+            grid-column: span 2; 
+            padding: 30px;
+        }
+        .game-card:first-child .game-icon {
+            font-size: 4rem;
+            width: 100px; height: 100px;
+        }
     }
 </style>
 {% endblock %}

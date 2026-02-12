@@ -6,7 +6,7 @@ from django.contrib import sitemaps
 from core.views import (
     home, blog_home, roulette, post_detail, ladder, 
     game_2048, api_2048_rank, games_lobby, 
-    game_reaction, api_reaction_rank, game_wordle, api_wordle_rank
+    game_reaction, api_reaction_rank, game_wordle, api_wordle_rank, game_kkomantle, api_kkomantle_guess
 )
 
 # 1. robots.txt 설정
@@ -30,7 +30,7 @@ class StaticViewSitemap(sitemaps.Sitemap):
         return [
             'home', 'blog_home', 'games_lobby', 
             'game_2048', 'game_reaction', 'game_wordle', 
-            'ladder', 'roulette'
+            'ladder', 'roulette', 'game_kkomantle'
         ]
 
     def location(self, item):
@@ -55,8 +55,11 @@ urlpatterns = [
     path('api/rank/reaction/', api_reaction_rank, name='api_reaction_rank'),
     path('games/wordle/', game_wordle, name='game_wordle'),
     path('api/rank/wordle/', api_wordle_rank, name='api_wordle_rank'),
+    path('games/kkomantle/', game_kkomantle, name='game_kkomantle'),
+    path('api/guess/kkomantle/', api_kkomantle_guess, name='api_kkomantle_guess'),
     
     # robots.txt와 sitemap.xml 경로 추가
     path("robots.txt", robots_txt),
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps_dict}, name='django.contrib.sitemaps.views.sitemap'),
+    
 ]

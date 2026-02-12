@@ -1,5 +1,8 @@
 import requests
 import os
+import json
+import random  # [추가됨] 데일리 단어 뽑기에 필수
+import datetime # [추가됨] 날짜 처리에 필수
 from django.conf import settings
 from gensim.models import KeyedVectors
 from django.shortcuts import render
@@ -7,25 +10,97 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 from .models import GameRecord
-import json
 
 # 워드프레스 API 기본 주소 설정
 WP_BASE_URL = "http://localhost:4080/wp-json/wp/v2"
 
-print("⏳ AI 모델 로딩 중... (잠시만 기다려주세요)")
-MODEL_PATH = os.path.join(settings.BASE_DIR, 'models', 'cc.ko.300.vec')
+# settings.py에서 설정 가져오기
+MODEL_PATH = getattr(settings, 'WORD2VEC_MODEL_PATH', None)
+LIMIT = getattr(settings, 'WORD2VEC_LIMIT', 300000)
 
-try:
-    # 1. FastText(.vec) 로딩 방식
-    model = KeyedVectors.load_word2vec_format(MODEL_PATH, binary=False, limit=300000)
+model = None
+CANDIDATES = [] # 정답 후보 단어 리스트
+
+# ==========================================
+# 1. AI 모델 로딩 (서버 시작 시 1회 실행)
+# ==========================================
+if MODEL_PATH and os.path.exists(MODEL_PATH):
+    print("⏳ AI 모델 로딩 중... (잠시만 기다려주세요)")
+    try:
+        model = KeyedVectors.load_word2vec_format(MODEL_PATH, binary=False, limit=LIMIT)
+        print("✅ 모델 로딩 완료!")
+        
+        # [오늘의 단어 후보군 만들기]
+        # 상위 3000개 중 2글자 이상, 한글로만 된 단어 필터링
+        raw_candidates = model.index_to_key[:3000]
+        CANDIDATES = [w for w in raw_candidates if len(w) >= 2 and w.replace('_', '').isalpha()]
+        
+    except Exception as e:
+        print(f"❌ 모델 로딩 실패: {e}")
+else:
+    print("🚀 개발 모드 또는 모델 파일 없음: AI 기능을 제한적으로 실행합니다.")
+
+
+# ==========================================
+# 2. 오늘의 정답 뽑기 함수 (핵심!)
+# ==========================================
+def get_daily_word():
+    """
+    오늘 날짜를 기준으로 정답 단어를 결정합니다.
+    같은 날짜에는 누가 접속해도 항상 같은 단어가 나옵니다.
+    """
+    # 모델이나 후보군이 없으면 테스트용 단어 리턴
+    if not model or not CANDIDATES:
+        return "세포"
+
+    # 1. 오늘 날짜 가져오기 (예: '2026-02-12')
+    today_str = datetime.date.today().isoformat()
     
-    # 2. Kyubyong(.bin) 로딩 방식 (바이너리면 binary=True)
-    # model = KeyedVectors.load_word2vec_format(MODEL_PATH, binary=True)
+    # 2. 날짜를 '랜덤 시드'로 설정
+    # 이렇게 하면 오늘 하루 동안은 random이 항상 같은 순서로 작동합니다.
+    rng = random.Random(today_str)
     
-    print("✅ 모델 로딩 완료!")
-except Exception as e:
-    print(f"❌ 모델 로딩 실패: {e}")
-    model = None
+    # 3. 후보군에서 하나 뽑기
+    secret_word = rng.choice(CANDIDATES)
+    return secret_word
+
+# 정답 단어와 유사한 상위 1000개 단어 캐싱
+TODAY_CACHE = {
+    'date': None,
+    'secret': None,
+    'top1000': []
+}
+
+def get_top1000(secret_word):
+    """정답 단어의 유사도 순위표를 구하거나 캐시에서 가져옴"""
+    today_str = datetime.date.today().isoformat()
+    
+    # 이미 구해놓은 게 오늘 거라면 그거 사용
+    if TODAY_CACHE['date'] == today_str and TODAY_CACHE['secret'] == secret_word:
+        return TODAY_CACHE['top1000']
+    
+    # 아니면 새로 계산 (하루에 한 번만 실행됨)
+    if model:
+        try:
+            # most_similar는 (단어, 점수) 튜플 리스트를 줌
+            top_list = [w[0] for w in model.most_similar(secret_word, topn=3000)]
+            
+            # 캐시 업데이트
+            TODAY_CACHE['date'] = today_str
+            TODAY_CACHE['secret'] = secret_word
+            TODAY_CACHE['top1000'] = top_list
+            return top_list
+        except:
+            return []
+    return []
+
+
+# ==========================================
+# 3. 뷰 함수 (꼬맨틀)
+# ==========================================
+
+def game_kkomantle(request):
+    return render(request, 'core/games/kkomantle.html')
 
 @csrf_exempt
 def api_kkomantle_guess(request):
@@ -33,24 +108,37 @@ def api_kkomantle_guess(request):
         try:
             data = json.loads(request.body)
             guess = data.get('word', '').strip()
-            secret_word = "실험" # 오늘의 정답 (나중엔 DB에서 가져오기)
 
+            # 모델 로딩 체크
             if not model:
-                return JsonResponse({'status': 'error', 'message': 'AI 모델이 로드되지 않았습니다.'}, status=500)
-
-            # 1. 단어가 모델에 있는지 확인
+                # 개발 모드일 때 임시 응답
+                return JsonResponse({'result': 'success', 'score': 0, 'rank': 'Unknown'})
+            
+            # 단어가 사전에 있는지 체크
             if guess not in model.key_to_index:
-                return JsonResponse({'result': 'fail', 'message': '사전에 없는 단어입니다.'})
+                return JsonResponse({'result': 'fail', 'message': f"'{guess}'은(는) 제가 모르는 단어예요."})
 
-            # 2. 유사도 계산 (Cosine Similarity)
-            # 결과는 0.0 ~ 1.0 사이 (1.0이 똑같음) -> 보기 좋게 100점 만점으로 변환
+            # 오늘의 정답 가져오기
+            secret_word = get_daily_word()
+            
+            # 순위표 준비
+            top_list = get_top1000(secret_word)
+
+            # ★ 에러 수정 부분: float32 -> float 형변환 ★
             similarity = model.similarity(secret_word, guess)
-            score = round(similarity * 100, 2)
-            
-            # 3. 순위 구하기 (Rank)
-            # 사실 매번 랭크를 계산하면 느립니다. 보통 정답 단어의 유사도 리스트를 미리 뽑아둡니다.
-            # 여기서는 약식으로 '점수'만 줍니다. (랭크 구현은 심화 과정)
-            
+            score = float(similarity) * 100 
+            score = round(score, 2)
+
+            # 순위 계산
+            rank = None
+            if guess == secret_word:
+                rank = 1
+            elif guess in top_list:
+                rank = top_list.index(guess) + 1
+            else:
+                rank = "3000+"
+
+            # 결과 반환
             result_type = 'success'
             if guess == secret_word:
                 result_type = 'correct'
@@ -58,11 +146,19 @@ def api_kkomantle_guess(request):
             return JsonResponse({
                 'result': result_type,
                 'score': score,
-                'rank': None # 랭크는 계산 비용이 커서 일단 뺌
+                'rank': rank
             })
 
         except Exception as e:
-            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+            print(f"Error: {e}") # 터미널에 에러 로그 출력
+            return JsonResponse({'result': 'error', 'message': '서버 오류가 발생했습니다.'})
+
+    return JsonResponse({'result': 'error'}, status=400)
+
+
+# ==========================================
+# 4. 기타 뷰 함수 (블로그, 로비, 다른 게임)
+# ==========================================
 
 def home(request):
     """대시보드 홈: 최근 글 3개만 요약 노출"""
@@ -84,7 +180,7 @@ def blog_home(request):
     # API 요청 파라미터 구성
     params = {
         'page': page,
-        'per_page': 8, # 한 페이지에 표시할 글 수
+        'per_page': 8,
         '_embed': True,
     }
     if category_id:
@@ -97,10 +193,10 @@ def blog_home(request):
         posts_res = requests.get(f"{WP_BASE_URL}/posts", params=params)
         posts = posts_res.json()
         
-        # 2. 전체 페이지 수 파악 (헤더 정보 활용)
+        # 2. 전체 페이지 수 파악
         total_pages = int(posts_res.headers.get('X-WP-TotalPages', 1))
         
-        # 3. 카테고리 목록 가져오기 (필터 탭용)
+        # 3. 카테고리 목록 가져오기
         categories_res = requests.get(f"{WP_BASE_URL}/categories")
         categories = categories_res.json()
     except:
@@ -122,22 +218,20 @@ def post_detail(request, post_id):
         res = requests.get(f"{WP_BASE_URL}/posts/{post_id}?_embed")
         post = res.json()
         
-        # --- 추가된 로직: 템플릿에서 쓸 수 있게 미리 가공 ---
-        category_name = "General"  # 기본값
+        # 카테고리 이름 가공
+        category_name = "General"
         if '_embedded' in post and 'wp:term' in post['_embedded']:
             try:
-                # 첫 번째 카테고리의 이름을 가져옵니다.
                 category_name = post['_embedded']['wp:term'][0][0]['name']
             except (IndexError, KeyError):
                 pass
-        # ----------------------------------------------
 
         category_id = post['categories'][0] if post.get('categories') else None
         prev_post = None
         next_post = None
 
         if category_id:
-            # 이전글/다음글 로직 (기존과 동일)
+            # 이전글/다음글 로직
             prev_res = requests.get(f"{WP_BASE_URL}/posts", params={
                 'categories': category_id, 'before': post['date'], 'per_page': 1, 'orderby': 'date', 'order': 'desc'
             })
@@ -153,7 +247,7 @@ def post_detail(request, post_id):
 
     return render(request, 'core/post_detail.html', {
         'post': post,
-        'category_name': category_name, # 가공된 카테고리 이름 전달
+        'category_name': category_name,
         'prev_post': prev_post,
         'next_post': next_post,
     })
@@ -164,24 +258,23 @@ def roulette(request):
 def ladder(request):
     return render(request, 'core/ladder.html')
 
+def games_lobby(request):
+    return render(request, 'core/games/lobby.html')
+
+# --- 2048 게임 ---
 def game_2048(request):
     return render(request, 'core/games/2048.html')
 
 @csrf_exempt
 def api_2048_rank(request):
-    """
-    GET: 오늘의 랭킹 TOP 10 조회
-    POST: 게임 점수 저장
-    """
     today = timezone.now().date()
     
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
-            name = data.get('player_name', 'Anonymous')[:10] # 이름 길이 제한
+            name = data.get('player_name', 'Anonymous')[:10]
             score = int(data.get('score', 0))
             
-            # 간단한 어뷰징 방지 (점수가 너무 낮거나 비정상이면 저장 안 함)
             if score > 0:
                 GameRecord.objects.create(
                     game_type='2048',
@@ -192,7 +285,6 @@ def api_2048_rank(request):
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
-    # GET 요청: 오늘의 랭킹 조회
     records = GameRecord.objects.filter(
         game_type='2048', 
         created_at__date=today
@@ -201,28 +293,20 @@ def api_2048_rank(request):
     data = [{'name': r.player_name, 'score': r.score} for r in records]
     return JsonResponse({'ranking': data})
 
-def games_lobby(request):
-    """게임 선택 로비 화면"""
-    return render(request, 'core/games/lobby.html')
-
+# --- 반응속도 게임 ---
 def game_reaction(request):
     return render(request, 'core/games/reaction.html')
 
 @csrf_exempt
 def api_reaction_rank(request):
-    """
-    GET: 오늘의 반응속도 랭킹 (낮은 시간 순서 = 오름차순)
-    POST: 기록 저장
-    """
     today = timezone.now().date()
     
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
             name = data.get('player_name', 'Anonymous')[:10]
-            score = int(data.get('score', 0)) # ms 단위
+            score = int(data.get('score', 0))
             
-            # 50ms 미만은 인간의 한계를 넘은 것이므로 저장 안 함 (어뷰징 방지)
             if score > 50:
                 GameRecord.objects.create(
                     game_type='reaction',
@@ -233,7 +317,7 @@ def api_reaction_rank(request):
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
-    # 반응속도는 '낮을수록' 좋은 기록이므로 score(오름차순) 정렬
+    # 반응속도는 낮은 점수가 1등 (오름차순)
     records = GameRecord.objects.filter(
         game_type='reaction', 
         created_at__date=today
@@ -242,23 +326,20 @@ def api_reaction_rank(request):
     data = [{'name': r.player_name, 'score': r.score} for r in records]
     return JsonResponse({'ranking': data})
 
+# --- 워들(Wordle) ---
 def game_wordle(request):
     return render(request, 'core/games/wordle.html')
 
 @csrf_exempt
 def api_wordle_rank(request):
-    """
-    Wordle 랭킹: 시도 횟수(1~6)가 적을수록 1등
-    """
     today = timezone.now().date()
     
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
             name = data.get('player_name', 'Anonymous')[:10]
-            score = int(data.get('score', 6)) # 시도 횟수
+            score = int(data.get('score', 6))
             
-            # 1~6회 사이의 성공만 저장
             if 1 <= score <= 6:
                 GameRecord.objects.create(
                     game_type='wordle',
@@ -269,7 +350,7 @@ def api_wordle_rank(request):
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
-    # 랭킹 조회: 점수(시도횟수) 오름차순 정렬 (1이 최고)
+    # 시도 횟수가 적은 게 1등
     records = GameRecord.objects.filter(
         game_type='wordle', 
         created_at__date=today

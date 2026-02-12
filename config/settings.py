@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -23,14 +24,19 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-#*r!)5qkk78&kk)vmwc5r)(ql5t_aum01zkoq2j!apll_tmg1d'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEV_MODE = True  
 
-ALLOWED_HOSTS = [
-    'monosaccharide180.com', 
-    '127.0.0.1', 
-    'localhost', 
-    '100.74.55.70' # 테일스케일 IP도 넣어두면 편합니다.
-]
+if DEV_MODE:
+    DEBUG = True
+    ALLOWED_HOSTS = ['*'] # 개발 편의를 위해 모든 접속 허용
+else:
+    DEBUG = False
+    ALLOWED_HOSTS = [
+        'monosaccharide180.com', 
+        '127.0.0.1', 
+        'localhost', 
+        '100.74.55.70'
+    ]
 CSRF_TRUSTED_ORIGINS = [
     'https://monosaccharide180.com',
 ]
@@ -137,3 +143,10 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 SITE_ID = 1
+
+WORD2VEC_MODEL_PATH = os.path.join(BASE_DIR, 'models', 'cc.ko.300.vec')
+WORD2VEC_LIMIT = 300000
+
+# 2. 정적 파일 경로 (배포 모드일 때만 STATIC_ROOT 설정)
+if not DEBUG:
+    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
