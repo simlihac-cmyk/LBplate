@@ -1,0 +1,199 @@
+/* 밝고 깔끔한 테마 */
+:root {
+    --bg-color: #f8f9fa;
+    --card-bg: #ffffff;
+    --text-main: #343a40;
+    --text-sub: #868e96;
+    --border-color: #e9ecef;
+    
+    --primary: #4dabf7;   /* 맑은 파랑 */
+    --secondary: #51cf66; /* 산뜻한 초록 */
+    --accent: #ff6b6b;    /* 화사한 빨강 */
+    --shadow: 0 10px 30px rgba(0,0,0,0.08);
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}
+
+.game-wrapper {
+    max-width: 1000px;
+    margin: 40px auto;
+    padding: 40px;
+    background: var(--card-bg);
+    border-radius: 24px;
+    box-shadow: var(--shadow);
+}
+
+/* 헤더 */
+.game-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+.game-header h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--text-main);
+    margin: 0;
+    letter-spacing: -1px;
+}
+.game-header p {
+    color: var(--text-sub);
+    margin-top: 10px;
+    font-size: 1rem;
+}
+
+/* 컨트롤 패널 */
+.control-panel {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f1f3f5;
+    padding: 24px;
+    border-radius: 16px;
+    margin-bottom: 40px;
+}
+
+.setting-group {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+.setting-group label {
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+.number-control {
+    display: flex;
+    align-items: center;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+.number-control input {
+    width: 50px;
+    border: none;
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--text-main);
+    pointer-events: none; /* 입력 방지 */
+}
+.number-control button {
+    border: none;
+    background: white;
+    padding: 10px 15px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    color: var(--primary);
+    transition: 0.2s;
+}
+.number-control button:hover {
+    background: #f8f9fa;
+}
+
+.action-group {
+    display: flex;
+    gap: 10px;
+}
+.btn {
+    border: none;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none;
+    background-color: #ced4da !important; 
+}
+.btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+}
+
+.btn-primary { background: var(--primary); }
+.btn-secondary { background: var(--secondary); }
+.btn-accent { background: var(--accent); }
+
+/* 게임 보드 */
+.game-board {
+    position: relative;
+    padding: 20px 0;
+}
+
+.track {
+    display: flex;
+    justify-content: space-around;
+    padding: 0 20px;
+    gap: 10px;
+}
+
+.input-box {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+}
+
+.track input {
+    width: 100%;
+    max-width: 100px;
+    padding: 12px;
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    text-align: center;
+    font-size: 0.9rem;
+    font-weight: 600;
+    background: white;
+    transition: 0.2s;
+    outline: none;
+}
+.track input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(77, 171, 247, 0.2);
+}
+
+/* 결과 뱃지 */
+.result-badge {
+    margin-top: 10px;
+    font-size: 0.8rem;
+    padding: 6px 12px;
+    border-radius: 20px;
+    color: white;
+    font-weight: bold;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: all 0.4s ease-out;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+.result-badge.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* 캔버스 */
+.canvas-container {
+    margin: 20px 0;
+    border-radius: 16px;
+    background: white; /* 캔버스 배경 흰색 */
+    /* 격자 무늬 배경 (선택사항) */
+    background-image: radial-gradient(#e9ecef 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+#ladderCanvas {
+    display: block;
+    width: 100%;
+    height: 500px;
+}

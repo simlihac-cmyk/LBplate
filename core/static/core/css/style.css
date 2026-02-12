@@ -1,0 +1,162 @@
+/* LBplate Optimized Light Glassmorphism Theme */
+
+:root {
+    --bg-color: #f5f5f7; 
+    --glass-bg: rgba(255, 255, 255, 0.75); 
+    --glass-border: rgba(255, 255, 255, 0.5);
+    --accent-color: #007AFF;
+    --text-main: #1d1d1f; 
+    --text-dim: #86868b;
+    --card-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.08);
+}
+
+/* Reset & Base */
+* { 
+    margin: 0; 
+    padding: 0; 
+    box-sizing: border-box; 
+    -webkit-tap-highlight-color: transparent; /* 모바일 터치 피드백 최적화 */
+}
+
+body {
+    background-color: var(--bg-color);
+    background-image: 
+        radial-gradient(circle at 10% 20%, rgba(0, 122, 255, 0.05) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(255, 45, 85, 0.03) 0%, transparent 40%);
+    background-attachment: fixed;
+    color: var(--text-main);
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    min-height: 100vh;
+    line-height: 1.5;
+}
+
+/* Navigation */
+nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2rem 5%;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.logo { 
+    font-size: 1.6rem; 
+    font-weight: 800; 
+    letter-spacing: -0.8px; 
+}
+
+.nav-links a { 
+    color: var(--text-dim); 
+    text-decoration: none; 
+    margin-left: 1.5rem; 
+    font-size: 0.95rem; 
+    font-weight: 500;
+    transition: 0.3s; 
+}
+
+/* Bento Grid Layout */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px 50px 20px;
+    display: grid;
+    /* 4열 기본 배치 */
+    grid-template-columns: repeat(4, 1fr);
+    /* 고정 높이보다는 최소 높이를 지정하여 내용물에 따라 늘어나게 변경 */
+    grid-auto-rows: minmax(180px, auto); 
+    gap: 20px;
+}
+
+/* ⭐ Card Wrapper: <a> 태그가 그리드 아이템 역할을 하도록 수정 */
+.card-wrapper {
+    display: flex;
+    text-decoration: none;
+    color: inherit;
+    height: 100%;
+}
+
+/* Grid Spanning */
+.col-2 { grid-column: span 2; }
+.row-2 { grid-row: span 2; }
+
+/* Glass Card Style */
+.card {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 28px;
+    padding: 24px;
+    box-shadow: var(--card-shadow);
+    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 100%; /* 부모 너비 꽉 채우기 */
+}
+
+.card:hover {
+    transform: translateY(-6px);
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.08);
+}
+
+.card-label { 
+    font-size: 0.75rem; 
+    color: var(--text-dim); 
+    text-transform: uppercase; 
+    letter-spacing: 1.2px; 
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.card-title { 
+    font-size: 1.25rem; 
+    font-weight: 700; 
+    color: #000;
+}
+
+/* 📱 Responsive Design */
+
+/* 태블릿 (1024px 이하) */
+@media (max-width: 1024px) {
+    .container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* 모바일 (640px 이하) */
+@media (max-width: 640px) {
+    nav {
+        padding: 1.5rem 20px;
+    }
+    
+    .nav-links { display: none; } /* 모바일에서는 간단하게 로고만 유지하거나 메뉴 아이콘으로 대체 권장 */
+
+    .container {
+        grid-template-columns: 1fr; /* 1열 배치 */
+        grid-auto-rows: auto;
+        gap: 16px;
+    }
+
+    /* 모바일에서는 2칸씩 차지하던 속성을 해제하여 가독성 확보 */
+    .col-2, .row-2 {
+        grid-column: span 1;
+        grid-row: span 1;
+    }
+
+    .card {
+        padding: 20px;
+        min-height: 140px;
+    }
+
+    .card-title {
+        font-size: 1.15rem;
+    }
+
+    .util-icon {
+        font-size: 1.8rem;
+    }
+}

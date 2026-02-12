@@ -1,0 +1,58 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}LBplate | Roulette{% endblock %}
+
+{% block content %}
+<div class="container" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80vh; padding-top: 40px;">
+    <h1 style="margin-bottom: 40px; font-weight: 800; letter-spacing: -1px;">Select Category</h1>
+    
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; width: 100%; max-width: 900px;">
+        <div class="card" onclick="selectCategory('lunch')" style="cursor: pointer; text-align: center; align-items: center;">
+            <span class="card-label">Food</span>
+            <div class="card-title">점심메뉴추천</div>
+            <div class="util-icon" style="align-self: center;">🍱</div>
+        </div>
+
+        <div class="card" onclick="selectCategory('decision')" style="cursor: pointer; text-align: center; align-items: center;">
+            <span class="card-label">Choice</span>
+            <div class="card-title">YES or NO</div>
+            <div class="util-icon" style="align-self: center;">⚖️</div>
+        </div>
+
+        <div class="card" onclick="selectCategory('custom')" style="cursor: pointer; text-align: center; align-items: center;">
+            <span class="card-label">Manual</span>
+            <div class="card-title">사용자 지정</div>
+            <div class="util-icon" style="align-self: center;">🛠️</div>
+        </div>
+    </div>
+
+    <div id="roulette-section" style="display: none; margin-top: 50px; width: 100%; text-align: center; padding-bottom: 100px;">
+        <hr style="border: 0; border-top: 1px solid var(--glass-border); margin-bottom: 40px;">
+        <h2 id="selected-title" style="margin-bottom: 30px; font-weight: 700;"></h2>
+        
+        <div id="custom-input-area" style="display: none; margin-bottom: 30px;">
+            <input type="text" id="item-input" placeholder="항목 입력 (예: 커피 내기)" 
+                   style="padding: 12px 20px; border-radius: 25px; border: 1px solid var(--glass-border); background: var(--glass-bg); width: 250px; outline: none;">
+            <button onclick="addCustomItem()" 
+                    style="padding: 12px 25px; border-radius: 25px; border: none; background: var(--text-main); color: var(--bg-color); font-weight: 600; cursor: pointer; margin-left: 10px;">추가</button>
+            <div id="item-list" style="margin-top: 15px; color: var(--text-dim); font-size: 0.9rem;"></div>
+        </div>
+
+        <div style="position: relative; width: 320px; height: 320px; margin: 0 auto;">
+            <div style="position: absolute; top: -15px; left: 50%; transform: translateX(-50%); z-index: 10; font-size: 2rem; color: var(--accent-color);">▼</div>
+            <canvas id="roulette-canvas" width="320" height="320"></canvas>
+        </div>
+
+        <button id="spin-button" onclick="spinWheel()" style="margin-top: 40px; padding: 18px 60px; border-radius: 50px; border: none; background: var(--accent-color); color: white; font-size: 1.1rem; font-weight: 700; cursor: pointer; box-shadow: 0 10px 25px rgba(0,122,255,0.3); transition: 0.3s;">
+            SPIN!
+        </button>
+        
+        <div id="result-display" style="margin-top: 30px; font-size: 1.8rem; font-weight: 800; color: var(--accent-color); min-height: 2.5rem;"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_script %}
+<script src="{% static 'core/js/roulette.js' %}"></script>
+{% endblock %}

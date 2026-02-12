@@ -1,0 +1,62 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Reaction Speed Test (Average){% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'core/css/games/reaction.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="game-container">
+    <div class="game-area">
+        <div class="attempt-info">
+            Attempt <span id="current-attempt">1</span> / 3
+        </div>
+
+        <div id="click-area" class="click-area state-waiting">
+            <div class="message-box">
+                <div class="icon" id="status-icon">⚡</div>
+                <h2 id="status-text">화면을 클릭해서 시작</h2>
+                <p id="sub-text">총 3번 측정하여 평균을 냅니다.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="rank-area card">
+        <h3 class="card-title">⚡ Today's Top 10</h3>
+        <p class="rank-desc">3회 평균 기록 (단위: ms)</p>
+        <ul id="rank-list" class="rank-list">
+            <li>Loading...</li>
+        </ul>
+    </div>
+</div>
+
+<div id="result-modal" class="modal hidden">
+    <div class="modal-content card">
+        <div class="result-icon">📊</div>
+        <h2>Average Score</h2>
+        <p class="result-score"><span id="final-score">0</span> ms</p>
+        
+        <div class="detail-scores">
+            <small id="detail-log">1차: 0ms | 2차: 0ms | 3차: 0ms</small>
+        </div>
+
+        <input type="text" id="player-name" placeholder="Enter your name" maxlength="10">
+        <div class="modal-btns">
+            <button onclick="submitScore()" class="btn-primary">랭킹 등록</button>
+            <button onclick="closeModal()" class="btn-secondary">다시 하기</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_script %}
+<script>
+    window.gameConfig = {
+        apiEndpoint: "{% url 'api_reaction_rank' %}",
+        csrfToken: "{{ csrf_token }}"
+    };
+</script>
+<script src="{% static 'core/js/games/reaction.js' %}?v=2"></script>
+{% endblock %}

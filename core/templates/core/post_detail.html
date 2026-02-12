@@ -1,0 +1,117 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}{{ post.title.rendered }} - 미생물의 똑똑한 하루{% endblock %}
+
+{% block content %}
+<div class="post-content-wrapper">
+    <header class="post-view-header">
+        <div class="post-category-tag">{{ category_name }}</div>
+        <h1 class="post-view-title">{{ post.title.rendered }}</h1>
+        <div class="post-view-meta">
+            <span>By <strong>LB plate</strong></span>
+            <span class="sep">•</span>
+            <span>{{ post.date|slice:":10" }}</span>
+        </div>
+    </header>
+
+    <main class="post-view-body">
+        {{ post.content.rendered|safe }}
+    </main>
+
+    <footer class="post-view-footer">
+        <div class="nav-split-row">
+            <div class="nav-item-half">
+                {% if prev_post %}
+                <a href="{% url 'post_detail' prev_post.id %}" class="nav-card">
+                    <span class="nav-dir">← Previous</span>
+                    <div class="nav-post-title">{{ prev_post.title.rendered|truncatechars:35 }}</div>
+                </a>
+                {% else %}
+                <div class="nav-card disabled">
+                    <span class="nav-dir">Previous</span>
+                    <div class="nav-post-title">첫 번째 기록입니다 🦠</div>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="nav-item-half">
+                {% if next_post %}
+                <a href="{% url 'post_detail' next_post.id %}" class="nav-card text-right">
+                    <span class="nav-dir">Next →</span>
+                    <div class="nav-post-title">{{ next_post.title.rendered|truncatechars:35 }}</div>
+                </a>
+                {% else %}
+                <div class="nav-card disabled text-right">
+                    <span class="nav-dir">Next</span>
+                    <div class="nav-post-title">마지막 기록입니다 ✨</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="nav-full-row">
+            <a href="{% url 'blog_home' %}" class="btn-full-home">
+                블로그 홈으로 돌아가기
+            </a>
+        </div>
+    </footer>
+</div>
+
+<style>
+    /* 전체 레이아웃 */
+    .post-content-wrapper { max-width: 800px; margin: 0 auto; padding: 60px 20px; }
+    
+    /* 헤더 스타일 */
+    .post-view-header { margin-bottom: 50px; border-bottom: 1px solid #f0f0f0; padding-bottom: 30px; }
+    .post-category-tag { color: var(--accent-color); font-weight: 800; font-size: 0.85rem; text-transform: uppercase; margin-bottom: 10px; }
+    .post-view-title { font-size: 2.5rem; font-weight: 800; line-height: 1.3; color: var(--text-color); margin-bottom: 15px; }
+    .post-view-meta { color: #888; font-size: 0.95rem; }
+    .sep { margin: 0 10px; color: #ddd; }
+
+    /* 본문 스타일 */
+    .post-view-body { line-height: 1.9; font-size: 1.15rem; color: #333; margin-bottom: 80px; }
+    .post-view-body img { max-width: 100%; height: auto; border-radius: 12px; margin: 30px 0; }
+
+    /* 내비게이션 영역 */
+    .post-view-footer { margin-top: 50px; padding-top: 40px; border-top: 1px solid #eee; }
+    
+    /* 1단: 이전/다음 글 카드 */
+    .nav-split-row { display: flex; gap: 15px; margin-bottom: 15px; }
+    .nav-item-half { flex: 1; }
+    .nav-card {
+        display: block; text-decoration: none; background: white; padding: 20px; border-radius: 16px;
+        border: 1px solid #eee; transition: all 0.2s ease; height: 100%;
+    }
+    /* 호버 시 배경은 밝게 유지하고, 테두리와 제목 색상을 진하게 변경 */
+    .nav-card:hover { border-color: var(--accent-color); background: #fcfcfc; transform: translateY(-3px); }
+    .nav-card:hover .nav-post-title { color: black; } /* 제목 더 선명하게 */
+
+    .nav-card.disabled { opacity: 0.5; background: #f9f9f9; border-style: dashed; cursor: not-allowed; }
+    
+    .nav-dir { font-size: 0.75rem; font-weight: 700; color: var(--accent-color); display: block; margin-bottom: 5px; }
+    .nav-post-title { font-size: 0.95rem; font-weight: 600; color: var(--text-color); transition: color 0.2s; }
+    .text-right { text-align: right; }
+
+    /* 2단: 블로그 홈 버튼 (수정된 부분!) */
+    .nav-full-row { width: 100%; }
+    .btn-full-home {
+        display: flex; align-items: center; justify-content: center; width: 100%; height: 55px;
+        background: var(--bg-color); color: var(--text-color); border-radius: 16px;
+        text-decoration: none; font-weight: 700; font-size: 0.95rem; transition: all 0.2s ease;
+        border: 1px solid #eee;
+    }
+    /* 호버 시 배경을 강조색(파랑/초록 등)으로 변경하고 글자를 흰색으로 고정 */
+    .btn-full-home:hover {
+        background: var(--accent-color); /* 기존 var(--text-color)에서 변경 */
+        color: white !important; /* 흰색 강제 적용 */
+        border-color: var(--accent-color);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    @media (max-width: 768px) {
+        .nav-split-row { flex-direction: column; }
+        .post-view-title { font-size: 1.8rem; }
+    }
+</style>
+{% endblock %}

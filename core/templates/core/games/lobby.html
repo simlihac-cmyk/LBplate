@@ -1,0 +1,119 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Arcade Lobby{% endblock %}
+
+{% block content %}
+<div class="lobby-container">
+    <div class="lobby-header">
+        <h1>Mini Arcade</h1>
+        <p>잠깐의 휴식, 최고의 기록에 도전하세요!</p>
+    </div>
+
+    <div class="game-grid">
+        <a href="{% url 'game_2048' %}" class="game-card active">
+            <div class="game-icon">🔢</div>
+            <div class="game-info">
+                <h3>2048</h3>
+                <p>숫자를 합쳐 2048을 만드세요. 두뇌 퍼즐의 정석!</p>
+                <span class="status-badge play">Play Now →</span>
+            </div>
+        </a>
+
+        <a href="{% url 'game_wordle' %}" class="game-card"> <div class="game-icon">🔤</div>
+            <div class="game-info">
+                <h3>Wordle</h3>
+                <p>5글자 단어를 추리하세요. 무제한 플레이 모드!</p>
+                <span class="status-badge play">Play Now →</span>
+            </div>
+        </a>
+
+        <a href="{% url 'game_reaction' %}" class="game-card"> <div class="game-icon">⚡</div>
+            <div class="game-info">
+                <h3>Reaction</h3>
+                <p>당신의 반응속도는 몇 ms? 순발력 테스트</p>
+                <span class="status-badge play">Play Now →</span> </div>
+        </a>
+    </div>
+</div>
+
+<style>
+    .lobby-container {
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+
+    .lobby-header {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+    .lobby-header h1 { font-size: 2.5rem; font-weight: 800; margin-bottom: 10px; }
+    .lobby-header p { color: var(--text-dim); }
+
+    .game-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .game-card {
+        background: rgba(255, 255, 255, 0.6);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        border-radius: 24px;
+        padding: 24px;
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        text-decoration: none;
+        color: var(--text-main);
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }
+
+    .game-icon {
+        font-size: 3rem;
+        background: white;
+        width: 80px;
+        height: 80px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 20px;
+        box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    }
+
+    .game-info h3 { margin: 0 0 5px 0; font-size: 1.4rem; }
+    .game-info p { margin: 0 0 15px 0; color: var(--text-dim); font-size: 0.95rem; }
+
+    /* 활성화 된 카드 스타일 */
+    .game-card.active:hover {
+        transform: translateY(-5px);
+        background: white;
+        box-shadow: 0 12px 24px rgba(0, 122, 255, 0.15);
+        border-color: var(--accent-color);
+    }
+    .status-badge {
+        font-size: 0.8rem; font-weight: 700; 
+        padding: 6px 12px; border-radius: 20px;
+        background: #e9ecef; color: #868e96;
+    }
+    .status-badge.play {
+        background: var(--accent-color); color: white;
+    }
+
+    /* 잠긴 카드 스타일 */
+    .game-card.locked {
+        opacity: 0.7;
+        cursor: not-allowed;
+        filter: grayscale(0.5);
+    }
+
+    @media (min-width: 768px) {
+        .game-grid { grid-template-columns: repeat(2, 1fr); }
+        /* 첫 번째 카드(2048)를 가로로 길게 쓰기 (선택사항) */
+        .game-card:first-child { grid-column: span 2; }
+    }
+</style>
+{% endblock %}

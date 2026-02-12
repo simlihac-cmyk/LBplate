@@ -1,0 +1,88 @@
+/* 2048 전용 스타일 */
+.game-container {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.game-area {
+    flex: 1;
+    min-width: 300px;
+    max-width: 400px;
+}
+
+.rank-area {
+    flex: 1;
+    min-width: 300px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+/* 게임 보드 */
+.game-board {
+    width: 100%;
+    aspect-ratio: 1;
+    background: #bbada0;
+    border-radius: 10px;
+    padding: 10px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-top: 20px;
+    touch-action: none; /* 모바일 스크롤 방지 */
+    user-select: none;
+}
+
+.tile {
+    background: rgba(238, 228, 218, 0.35);
+    border-radius: 5px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 2rem;
+    font-weight: bold;
+    color: #776e65;
+    transition: all 0.15s ease;
+}
+
+/* 타일 색상 */
+.tile-2 { background: #eee4da; }
+.tile-4 { background: #ede0c8; }
+.tile-8 { background: #f2b179; color: white; }
+.tile-16 { background: #f59563; color: white; }
+.tile-32 { background: #f67c5f; color: white; }
+.tile-64 { background: #f65e3b; color: white; }
+.tile-128 { background: #edcf72; color: white; font-size: 1.8rem; }
+.tile-256 { background: #edcc61; color: white; font-size: 1.8rem; box-shadow: 0 0 10px #edcc61; }
+.tile-512 { background: #edc850; color: white; font-size: 1.8rem; box-shadow: 0 0 10px #edc850; }
+.tile-1024 { background: #edc53f; color: white; font-size: 1.5rem; box-shadow: 0 0 10px #edc53f; }
+.tile-2048 { background: #edc22e; color: white; font-size: 1.5rem; box-shadow: 0 0 10px #edc22e; }
+.tile-super { background: #3c3a32; color: white; font-size: 1.2rem; }
+
+/* 점수판 */
+.score-board { display: flex; justify-content: space-between; align-items: center; }
+.score-box { background: #bbada0; padding: 5px 15px; border-radius: 5px; color: white; text-align: center; }
+.score-box span:first-child { display: block; font-size: 0.8rem; color: #eee4da; }
+.score-box span:last-child { font-weight: bold; font-size: 1.2rem; }
+.restart-btn { background: #8f7a66; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+
+.mobile-guide { text-align: center; margin-top: 10px; color: #776e65; font-size: 0.9rem; }
+
+/* 모달 */
+.modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; justify-content: center; align-items: center; }
+.modal.hidden { display: none; }
+.modal-content { background: white; padding: 30px; text-align: center; width: 90%; max-width: 400px; }
+.modal-content input { width: 100%; padding: 10px; margin: 15px 0; border: 1px solid #ddd; border-radius: 5px; }
+.modal-btns button { padding: 10px 20px; margin: 0 5px; border: none; border-radius: 5px; cursor: pointer; }
+.btn-primary { background: var(--accent-color, #007AFF); color: white; }
+.btn-secondary { background: #86868b; color: white; }
+
+/* 랭킹 리스트 */
+.rank-list { list-style: none; padding: 0; }
+.rank-list li { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(0,0,0,0.1); }
+.rank-list li:last-child { border-bottom: none; }
+.rank-num { font-weight: bold; color: var(--accent-color, #007AFF); margin-right: 10px; }

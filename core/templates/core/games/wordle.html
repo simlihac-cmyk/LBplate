@@ -1,0 +1,51 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Wordle - Infinite{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'core/css/games/wordle.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="game-container">
+    <div class="game-area">
+        <div id="board" class="wordle-board"></div>
+        
+        <div id="keyboard" class="keyboard"></div>
+    </div>
+
+    <div class="rank-area card">
+        <h3 class="card-title">🔤 Today's Top 10</h3>
+        <p class="rank-desc">적은 시도 횟수가 1등입니다.</p>
+        <ul id="rank-list" class="rank-list">
+            <li>Loading...</li>
+        </ul>
+    </div>
+</div>
+
+<div id="result-modal" class="modal hidden">
+    <div class="modal-content card">
+        <div class="result-icon">🎉</div>
+        <h2 id="result-title">Success!</h2>
+        <p class="result-msg">정답: <span id="answer-word" class="answer-highlight">APPLE</span></p>
+        <p id="result-score" class="result-score">시도 횟수: <span id="final-score">3</span> / 6</p>
+        
+        <input type="text" id="player-name" placeholder="Enter your name" maxlength="10">
+        <div class="modal-btns">
+            <button onclick="submitScore()" class="btn-primary" id="btn-submit">랭킹 등록</button>
+            <button onclick="closeModal()" class="btn-secondary">다시 하기</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_script %}
+<script>
+    window.gameConfig = {
+        apiEndpoint: "{% url 'api_wordle_rank' %}",
+        csrfToken: "{{ csrf_token }}"
+    };
+</script>
+<script src="{% static 'core/js/games/wordle.js' %}?v=3"></script>
+{% endblock %}

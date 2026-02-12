@@ -1,0 +1,55 @@
+Watching for file changes with StatReloader
+/Users/sg_mac/lbplate/venv/lib/python3.9/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+Watching for file changes with StatReloader
+/Users/sg_mac/lbplate/venv/lib/python3.9/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+Error: That port is already in use.
+[10/Feb/2026 20:48:07] "HEAD / HTTP/1.1" 200 0
+[10/Feb/2026 21:03:01] "GET / HTTP/1.1" 200 3305
+[10/Feb/2026 21:03:01] "GET /static/core/css/style.css HTTP/1.1" 200 3768
+[10/Feb/2026 21:03:01] "GET /static/core/js/roulette.js HTTP/1.1" 200 5584
+[10/Feb/2026 21:03:01] "GET /static/core/js/daily_pick.js HTTP/1.1" 200 1793
+Not Found: /favicon.ico
+[10/Feb/2026 21:03:02] "GET /favicon.ico HTTP/1.1" 404 2356
+[10/Feb/2026 21:04:56] "GET / HTTP/1.1" 200 3305
+Not Found: /favicon.ico
+[10/Feb/2026 21:04:56] "GET /favicon.ico HTTP/1.1" 404 2356
+[10/Feb/2026 21:04:58] "GET /static/core/json/quotes.json HTTP/1.1" 200 794
+[10/Feb/2026 21:05:38] "GET /roulette/ HTTP/1.1" 200 4142
+/Users/sg_mac/lbplate/core/views.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+February 10, 2026 - 20:43:42
+Django version 4.2.28, using settings 'config.settings'
+Starting development server at http://0.0.0.0:4000/
+Quit the server with CONTROL-C.
+
+Watching for file changes with StatReloader
+Traceback (most recent call last):
+  File "/Users/sg_mac/lbplate/manage.py", line 22, in <module>
+    main()
+  File "/Users/sg_mac/lbplate/manage.py", line 18, in main
+    execute_from_command_line(sys.argv)
+  File "/Users/sg_mac/lbplate/venv/lib/python3.9/site-packages/django/core/management/__init__.py", line 442, in execute_from_command_line
+    utility.execute()
+  File "/Users/sg_mac/lbplate/venv/lib/python3.9/site-packages/django/core/management/__init__.py", line 436, in execute
+    self.fetch_command(subcommand).run_from_argv(self.argv)
+  File "/Users/sg_mac/lbplate/venv/lib/python3.9/site-packages/django/core/management/base.py", line 412, in run_from_argv
+    self.execute(*args, **cmd_options)
+  File "/Users/sg_mac/lbplate/venv/lib/python3.9/site-packages/django/core/management/commands/runserver.py", line 74, in execute
+    super().execute(*args, **options)
+  File "/Users/sg_mac/lbplate/venv/lib/python3.9/site-packages/django/core/management/base.py", line 458, in execute
+    output = self.handle(*args, **options)
+  File "/Users/sg_mac/lbplate/venv/lib/python3.9/site-packages/django/core/management/commands/runserver.py", line 111, in handle
+    self.run(**options)
+  File "/Users/sg_mac/lbplate/venv/lib/python3.9/site-packages/django/core/management/commands/runserver.py", line 118, in run
+    autoreload.run_with_reloader(self.inner_run, **options)
+  File "/Users/sg_mac/lbplate/venv/lib/python3.9/site-packages/django/utils/autoreload.py", line 670, in run_with_reloader
+    start_django(reloader, main_func, *args, **kwargs)
+  File "/Users/sg_mac/lbplate/venv/lib/python3.9/site-packages/django/utils/autoreload.py", line 649, in start_django
+    ensure_echo_on()
+  File "/Users/sg_mac/lbplate/venv/lib/python3.9/site-packages/django/utils/autoreload.py", line 94, in ensure_echo_on
+    if not termios or not sys.stdin.isatty():
+AttributeError: 'NoneType' object has no attribute 'isatty'

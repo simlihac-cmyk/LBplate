@@ -1,0 +1,79 @@
+/* 레이아웃 (2048과 비슷함) */
+.game-container {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.game-area { 
+    flex: 1; 
+    min-width: 300px; 
+    height: 400px; 
+    position: relative; /* 배지 위치 잡기 위해 */
+    display: flex;
+    flex-direction: column;
+}
+.attempt-info {
+    text-align: center;
+    font-weight: 700;
+    color: #86868b;
+    margin-bottom: 10px;
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+.rank-area { flex: 1; min-width: 300px; max-height: 400px; overflow-y: auto; }
+.rank-desc { font-size: 0.8rem; color: #86868b; margin-bottom: 10px; }
+
+/* 클릭 영역 스타일 */
+.click-area {
+    flex: 1;
+    width: 100%; height: 100%;
+    border-radius: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s ease;
+    user-select: none;
+    color: white;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.message-box .icon { font-size: 4rem; margin-bottom: 10px; display: block; }
+.message-box h2 { font-size: 1.8rem; margin-bottom: 10px; font-weight: 800; }
+.message-box p { font-size: 1rem; opacity: 0.9; }
+
+/* 상태별 색상 */
+.state-waiting { background-color: #007AFF; } /* 대기 (파랑) */
+.state-ready { background-color: #ff3b30; }   /* 준비 (빨강) */
+.state-now { background-color: #34c759; }     /* 클릭! (초록) */
+
+/* 모달 스타일 */
+.modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; justify-content: center; align-items: center; }
+.modal.hidden { display: none; }
+.modal-content { background: white; padding: 40px; text-align: center; width: 90%; max-width: 350px; border-radius: 24px; }
+.result-icon { font-size: 3rem; margin-bottom: 10px; }
+.result-score { font-size: 2.5rem; font-weight: 800; color: #007AFF; margin: 10px 0 20px 0; }
+.modal-content input { width: 100%; padding: 12px; margin-bottom: 20px; border: 1px solid #e5e5e5; border-radius: 10px; font-size: 1rem; text-align: center; }
+
+.modal-btns { display: flex; gap: 10px; justify-content: center; }
+.modal-btns button { padding: 12px 20px; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; font-size: 0.95rem; }
+.btn-primary { background: #007AFF; color: white; }
+.btn-secondary { background: #f2f2f7; color: #1d1d1f; }
+
+/* 랭킹 리스트 */
+.rank-list { list-style: none; padding: 0; }
+.rank-list li { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid rgba(0,0,0,0.05); }
+.rank-num { font-weight: 800; color: #007AFF; margin-right: 10px; width: 24px; display: inline-block; }
+
+.detail-scores {
+    margin-bottom: 20px;
+    color: #86868b;
+    font-size: 0.85rem;
+}

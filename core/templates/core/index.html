@@ -1,0 +1,88 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <div class="card col-2 row-2" id="blog">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <span class="card-label">Recent Updates</span>
+            <a href="{% url 'blog_home' %}" style="font-size: 0.75rem; color: var(--accent-color); text-decoration: none; font-weight: 700;">View All →</a>
+        </div>
+        <div class="blog-list">
+            {% if posts %}
+                {% for post in posts|slice:":3" %}
+                <a href="{% url 'post_detail' post.id %}" class="blog-link">
+                    <div class="blog-item">
+                        <h4>{{ post.title.rendered }}</h4>
+                        <p>{{ post.excerpt.rendered|striptags|truncatechars:60 }}</p>
+                    </div>
+                </a>
+                {% endfor %}
+            {% else %}
+                <p style="color:var(--text-dim)">작성된 포스트가 없습니다.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card" onclick="showFortune()" style="cursor: pointer;">
+        <span class="card-label">Daily Pick</span>
+        <h3 class="card-title" id="fortune-title">오늘의 문구</h3>
+        <p id="fortune-display" style="transition: opacity 0.3s ease; font-size: 0.9rem; color: var(--text-dim); margin-top: 10px;">
+            클릭하여 확인
+        </p>
+        <div class="util-icon">✨</div>
+    </div>
+
+    <a href="{% url 'roulette' %}" class="card grid-item">
+        <span class="card-label">Tool</span>
+        <div class="card-title">돌림판</div>
+        <p style="font-size: 0.85rem; color: var(--text-dim); margin-top: 8px;">
+            멀티 룰렛 도구 실행
+        </p>
+        <div class="util-icon">🎡</div>
+    </a>
+
+    <a href="{% url 'games_lobby' %}" class="card col-2" id="games">
+        <span class="card-label">Entertainment</span>
+        <div class="card-title">Mini Games</div>
+        <div style="display: flex; gap: 15px; margin-top: 15px; font-size: 0.9rem; color: var(--accent-color); font-weight: 600;">
+            <span>Wordle</span>
+            <span style="color: var(--text-dim)">•</span>
+            <span>2048</span>
+            <span style="color: var(--text-dim)">•</span>
+            <span>Reaction</span>
+        </div>
+        <div class="util-icon" style="font-size: 1.5rem; position: absolute; bottom: 20px; right: 20px;">🎮</div>
+    </a>
+
+    <a href="{% url 'ladder' %}" class="card grid-item">
+        <span class="card-label">Tool</span>
+        <div class="card-title">사다리 타기</div>
+        <p style="font-size: 0.85rem; color: var(--text-dim); margin-top: 8px;">
+            경로 추적 게임
+        </p>
+        <div class="util-icon">🪜</div>
+    </a>
+
+    <div class="card">
+        <span class="card-label">Coming Soon</span>
+        <div class="card-title">새로운 기능</div>
+        <div class="util-icon">➕</div>
+    </div>
+</div>
+
+<style>
+    /* (추가) 링크형 카드가 일반 카드와 똑같이 보이도록 설정 */
+    .container > a.card {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        text-decoration: none;
+        color: inherit;
+    }
+    
+    .blog-link { text-decoration: none; color: inherit; display: block; }
+    .blog-item { border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 10px; margin-bottom: 10px; }
+    .blog-item:last-child { border-bottom: none; }
+</style>
+{% endblock %}
