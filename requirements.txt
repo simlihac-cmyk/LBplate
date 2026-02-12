@@ -11,4 +11,5 @@ smart_open==7.5.0
 sqlparse==0.5.5
 typing_extensions==4.15.0
 urllib3==2.6.3
+whitenoise==6.11.0
 wrapt==2.1.1
