@@ -1,0 +1,18 @@
+[Unit]
+Description=LBplate Django (gunicorn)
+After=network.target
+
+[Service]
+Type=simple
+User=sg_mac
+Group=staff
+WorkingDirectory=/Users/sg_mac/lbplate
+EnvironmentFile=/Users/sg_mac/lbplate/.env.production
+ExecStart=/Users/sg_mac/lbplate/venv/bin/python -m gunicorn config.wsgi:application --config /Users/sg_mac/lbplate/gunicorn.conf.py
+Restart=always
+RestartSec=5
+TimeoutStartSec=30
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target

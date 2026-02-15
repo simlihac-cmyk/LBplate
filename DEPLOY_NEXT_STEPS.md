@@ -6,29 +6,30 @@
 - Domain: `https://monosaccharide180.com`
 - Django app port: `4000`
 - WordPress port: `4080`
-- Runtime in production: `tmux` session
+- Current runtime: `tmux` session (`lbplate`)
+- Next runtime target: `gunicorn` (`systemd` optional)
 
 ## 1) One-time setup in `lbplate`
 ```bash
 cd /Users/sg_mac/lbplate
 
-# Pull latest deploy branch
 git pull --ff-only origin main
 
 # Create production env once
 cp .env.production.example .env.production
 
-# Generate and set secure secret key
+# Generate a secure key
 python3 -c "import secrets; print(secrets.token_urlsafe(64))"
 # paste into DJANGO_SECRET_KEY in .env.production
 ```
 
-Production `.env.production` must include:
+Required values in `.env.production`:
 - `DJANGO_DEV_MODE=false`
 - `DJANGO_DEBUG=false`
 - `DJANGO_ALLOWED_HOSTS=monosaccharide180.com,www.monosaccharide180.com`
 - `DJANGO_CSRF_TRUSTED_ORIGINS=https://monosaccharide180.com,https://www.monosaccharide180.com`
 - `WP_BASE_URL=http://127.0.0.1:4080/wp-json/wp/v2`
+- `DJANGO_USE_X_FORWARDED_PROTO=true`
 
 ## 2) Daily workflow (Dev -> Git -> Deploy)
 
@@ -45,80 +46,90 @@ git commit -m "feat: describe change"
 git push origin main
 ```
 
-### B. Deploy from `lbplate`
-```bash
-cd /Users/sg_mac/lbplate
-
-# If local file edits block pull, stash first
-git stash push -m "temp before deploy" config/settings.py || true
-
-git pull --ff-only origin main
-
-source /Users/sg_mac/lbplate/venv/bin/activate
-set -a && source .env.production && set +a
-
-pip install -r requirements.txt
-python manage.py check
-python manage.py test core.tests -v 2
-python manage.py collectstatic --noinput
-```
-
-### C. One-command deploy in `lbplate` (recommended)
-`deploy.sh` is included in the repo root and automates:
-- `git pull --ff-only`
-- `pip install -r requirements.txt`
-- `python manage.py check`
-- `python manage.py test core.tests -v 2`
-- `python manage.py collectstatic --noinput`
-- tmux app restart (`lbplate` session)
-
+### B. Deploy in `lbplate` (recommended: one command)
 ```bash
 cd /Users/sg_mac/lbplate
 ./deploy.sh
 ```
 
+`deploy.sh` does:
+- `git pull --ff-only`
+- `pip install -r requirements.txt`
+- `python manage.py check`
+- `python manage.py test core.tests -v 2`
+- `python manage.py collectstatic --noinput`
+- restart app in tmux session `lbplate`
+
 Useful options:
 ```bash
+# dry-run (no actual changes)
+DRY_RUN=1 ./deploy.sh
+
 # skip tests
 RUN_TESTS=0 ./deploy.sh
 
 # skip pip install
 PIP_INSTALL=0 ./deploy.sh
 
-# disable auto-stash for config/settings.py
+# disable config/settings.py auto-stash
 AUTO_STASH_SETTINGS=0 ./deploy.sh
+
+# run tests with production flags 그대로 사용
+TEST_FORCE_DEV_MODE=0 ./deploy.sh
+
+# rollback on failure (dangerous if local uncommitted changes exist)
+AUTO_ROLLBACK=1 ./deploy.sh
 ```
 
-## 3) Restart app in tmux (current operation mode)
-Example if running Django in a tmux session:
+## 3) Runtime mode choices
+
+### Option A. Keep tmux (current)
+`deploy.sh` already supports this. Keep using `tmux` if stable for your ops.
+
+Check/attach:
 ```bash
 tmux ls
 tmux attach -t lbplate
-# stop old process: Ctrl+C
-cd /Users/sg_mac/lbplate
-source /Users/sg_mac/lbplate/venv/bin/activate
-set -a && source .env.production && set +a
-python manage.py runserver 127.0.0.1:4000
 ```
 
-Detach without stopping process:
+Detach:
 ```bash
 Ctrl+b, then d
 ```
 
+### Option B. Move to systemd + gunicorn (Linux host only)
+Files already included:
+- `gunicorn.conf.py`
+- `deploy/systemd/lbplate.service`
+- `deploy/systemd/README.md`
+
+Apply:
+```bash
+sudo cp /Users/sg_mac/lbplate/deploy/systemd/lbplate.service /etc/systemd/system/lbplate.service
+sudo systemctl daemon-reload
+sudo systemctl enable lbplate
+sudo systemctl restart lbplate
+sudo systemctl status lbplate --no-pager
+```
+
 ## 4) Reverse proxy check (HTTPS + security)
-Nginx/Caddy should forward `X-Forwarded-Proto` to Django.
+Nginx/Caddy should pass `X-Forwarded-Proto`.
 
 Nginx example:
 ```nginx
 proxy_set_header X-Forwarded-Proto $scheme;
 ```
 
-Quick validation points:
-- `https://monosaccharide180.com` opens without redirect loop.
-- Django app receives HTTPS context correctly.
+Validation:
+- `https://monosaccharide180.com` opens without redirect loop
+- Django receives HTTPS context correctly
 
-## 5) Recommended next upgrades
-- Replace `runserver` with `gunicorn` + process manager (`systemd` or `supervisor`).
-- Move production DB from sqlite to PostgreSQL/MariaDB.
-- Add error monitoring (Sentry) and structured logging.
+## 5) Tailscale impact
+- These changes do not change Tailscale tunnel topology.
+- As long as app bind remains local (`127.0.0.1:4000`) and reverse proxy is on the same host, Tailscale remote IDE workflow is unaffected.
+- If you need direct tailnet access in production, add tailnet host/IP to `DJANGO_ALLOWED_HOSTS`.
+
+## 6) Next recommended upgrades
+- Move production DB from SQLite to PostgreSQL
+- Add monitoring/alerts (Sentry + webhook)
+- Add backup/restore script and weekly restore drill
