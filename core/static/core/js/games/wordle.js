@@ -25,12 +25,17 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 키보드 입력
     document.addEventListener('keydown', handlePhysicalKeyboard);
+
+    const submitBtn = document.getElementById('btn-submit');
+    if (submitBtn) submitBtn.addEventListener('click', submitScore);
+
+    const closeModalBtn = document.getElementById('close-modal-btn');
+    if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
 });
 
 function initGame() {
     // 랜덤 단어 선택 및 공백 제거 (안전장치)
     secretWord = WORDS[Math.floor(Math.random() * WORDS.length)].trim().toUpperCase();
-    console.log("Secret Word (Debug):", secretWord); // F12 콘솔에서 정답 확인 가능
     
     // 변수 초기화
     currentRow = 0;
@@ -81,7 +86,7 @@ function createKeyboard() {
             keyDiv.textContent = key === "BACK" ? "⌫" : key;
             keyDiv.className = key.length > 1 ? 'key wide' : 'key';
             keyDiv.id = `key-${key}`;
-            keyDiv.onclick = () => handleKey(key);
+            keyDiv.addEventListener('click', () => handleKey(key));
             rowDiv.appendChild(keyDiv);
         });
         keyboard.appendChild(rowDiv);
@@ -128,7 +133,6 @@ function handleKey(key) {
 // === ★ 수정된 정답 확인 로직 (디버깅 강화) ===
 function checkGuess() {
     const guess = guesses[currentRow].join("").trim().toUpperCase(); // 공백제거 및 대문자화
-    console.log(`Checking: ${guess} vs ${secretWord}`); // 비교 로그 출력
     
     const rowTiles = [];
     let checkSecret = secretWord.split("");
@@ -168,15 +172,11 @@ function checkGuess() {
 
     // 4. 결과 판정 (시간차 실행)
     setTimeout(() => {
-        // ★ 문자열을 직접 비교해서 로그 출력
         if (guess === secretWord) {
-            console.log("Game Win! Showing modal...");
             isGameOver = true;
             showModal(true);
         } else {
-            console.log("Not matched yet.");
             if (currentRow >= 5) {
-                console.log("Game Over (Max tries)");
                 isGameOver = true;
                 showModal(false);
             } else {
@@ -233,7 +233,6 @@ function showModal(success) {
     }
     
     modal.classList.remove('hidden'); // display: block 처리
-    console.log("Modal class 'hidden' removed.");
 }
 
 function closeModal() {

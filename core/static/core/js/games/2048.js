@@ -17,6 +17,15 @@ document.addEventListener('DOMContentLoaded', () => {
         boardEl.addEventListener('touchstart', handleTouchStart, {passive: false});
         boardEl.addEventListener('touchend', handleTouchEnd, {passive: false});
     }
+
+    const restartBtn = document.getElementById('restart-btn');
+    if (restartBtn) restartBtn.addEventListener('click', initGame);
+
+    const submitScoreBtn = document.getElementById('submit-score-btn');
+    if (submitScoreBtn) submitScoreBtn.addEventListener('click', submitScore);
+
+    const closeModalBtn = document.getElementById('close-modal-btn');
+    if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
 });
 
 // === 2. 게임 시작 및 그리기 ===

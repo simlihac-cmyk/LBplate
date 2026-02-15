@@ -1,9 +1,10 @@
 {% extends 'core/base.html' %}
 {% load static %}
 
-{% block title %}{{ post.title.rendered }} - 미생물의 똑똑한 하루{% endblock %}
+{% block title %}{% if post %}{{ post.title.rendered }}{% else %}Not Found{% endif %} - 미생물의 똑똑한 하루{% endblock %}
 
 {% block content %}
+{% if post %}
 <div class="post-content-wrapper">
     <header class="post-view-header">
         <div class="post-category-tag">{{ category_name }}</div>
@@ -57,6 +58,24 @@
         </div>
     </footer>
 </div>
+{% else %}
+<div class="post-content-wrapper">
+    <header class="post-view-header">
+        <div class="post-category-tag">Not Found</div>
+        <h1 class="post-view-title">요청한 글을 찾을 수 없습니다.</h1>
+        <div class="post-view-meta">
+            <span>삭제되었거나 주소가 변경되었을 수 있습니다.</span>
+        </div>
+    </header>
+    <footer class="post-view-footer">
+        <div class="nav-full-row">
+            <a href="{% url 'blog_home' %}" class="btn-full-home">
+                블로그 홈으로 돌아가기
+            </a>
+        </div>
+    </footer>
+</div>
+{% endif %}
 
 <style>
     /* 전체 레이아웃 */

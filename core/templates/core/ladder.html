@@ -16,9 +16,9 @@
         <div class="setting-group">
             <label>참가 인원</label>
             <div class="number-control">
-                <button type="button" onclick="adjustCount(-1)">-</button>
+                <button id="decrease-player-btn" type="button">-</button>
                 <input type="number" id="playerCount" value="4" min="2" max="10" readonly>
-                <button type="button" onclick="adjustCount(1)">+</button>
+                <button id="increase-player-btn" type="button">+</button>
             </div>
         </div>
         
@@ -43,12 +43,4 @@
 
 {% block extra_script %}
 <script src="{% static 'core/js/ladder.js' %}"></script>
-<script>
-    // 인원 수 조절 헬퍼 함수 (HTML 내에 두어 간단히 처리)
-    function adjustCount(delta) {
-        const input = document.getElementById('playerCount');
-        let val = parseInt(input.value) + delta;
-        if(val >= 2 && val <= 10) input.value = val;
-    }
-</script>
 {% endblock %}

@@ -5,6 +5,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnConfirm = document.getElementById('btnConfirm');
     const btnGenerate = document.getElementById('btnGenerate');
     const btnStart = document.getElementById('btnStart');
+    const decreasePlayerBtn = document.getElementById('decrease-player-btn');
+    const increasePlayerBtn = document.getElementById('increase-player-btn');
+
+    function adjustCount(delta) {
+        const input = document.getElementById('playerCount');
+        if (!input) return;
+        const currentValue = parseInt(input.value, 10) || 0;
+        const nextValue = currentValue + delta;
+        if (nextValue >= 2 && nextValue <= 10) input.value = String(nextValue);
+    }
+
+    if (decreasePlayerBtn) {
+        decreasePlayerBtn.addEventListener('click', () => adjustCount(-1));
+    }
+    if (increasePlayerBtn) {
+        increasePlayerBtn.addEventListener('click', () => adjustCount(1));
+    }
 
     // Canvas 해상도 조정 (선명하게)
     function resizeCanvas() {
@@ -35,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // 1. 설정 완료 (입력창 생성)
-    btnConfirm.onclick = () => {
+    btnConfirm.addEventListener('click', () => {
         game.players = parseInt(document.getElementById('playerCount').value);
         const top = document.getElementById('playerInputs');
         const bottom = document.getElementById('resultInputs');
@@ -61,10 +78,10 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // 캔버스 초기화
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-    };
+    });
 
     // 2. 사다리 생성
-    btnGenerate.onclick = () => {
+    btnGenerate.addEventListener('click', () => {
         resizeCanvas();
         game.width = canvas.width;
         
@@ -73,12 +90,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         createBridges();
         drawLadder();
-        
+
         btnStart.disabled = false;
-    };
+    });
 
     // 3. 게임 시작 (애니메이션)
-    btnStart.onclick = () => {
+    btnStart.addEventListener('click', () => {
         btnStart.disabled = true;
         btnGenerate.disabled = true;
         btnConfirm.disabled = true; // 게임 중 설정 변경 방지
@@ -95,7 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 animatePath(i);
             }, i * 600 + Math.random() * 300);
         }
-    };
+    });
 
     // 내부 로직: 다리 생성
     function createBridges() {

@@ -15,14 +15,42 @@ const dataSets = {
     custom: [] // 초기에는 비어있음
 };
 
-window.onload = () => {
+document.addEventListener('DOMContentLoaded', () => {
     canvas = document.getElementById('roulette-canvas');
     if (canvas) ctx = canvas.getContext('2d');
-};
+    bindRouletteEvents();
+});
+
+function bindRouletteEvents() {
+    document.querySelectorAll('.category-card').forEach((card) => {
+        card.addEventListener('click', () => {
+            const type = card.dataset.category;
+            if (type) selectCategory(type);
+        });
+    });
+
+    const addBtn = document.getElementById('add-item-button');
+    if (addBtn) addBtn.addEventListener('click', addCustomItem);
+
+    const spinButton = document.getElementById('spin-button');
+    if (spinButton) spinButton.addEventListener('click', spinWheel);
+
+    const itemInput = document.getElementById('item-input');
+    if (itemInput) {
+        itemInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addCustomItem();
+            }
+        });
+    }
+}
 
 // 룰렛 그리기 함수
 function drawWheel(items) {
-    if (!ctx || items.length === 0) {
+    if (!ctx) return;
+
+    if (items.length === 0) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.beginPath();
         ctx.arc(160, 160, 150, 0, 2 * Math.PI);
@@ -118,10 +146,28 @@ function addCustomItem() {
 // 추가된 항목 리스트 업데이트
 function updateItemList() {
     const listDiv = document.getElementById('item-list');
+    if (!listDiv) return;
+
+    listDiv.innerHTML = '';
+
     if (currentItems.length > 0) {
-        listDiv.innerHTML = `현재 항목: ${currentItems.join(', ')} <br> <small style="color:red; cursor:pointer;" onclick="clearCustom()">전체 삭제</small>`;
-    } else {
-        listDiv.innerHTML = "";
+        const text = document.createElement('span');
+        text.textContent = `현재 항목: ${currentItems.join(', ')}`;
+        listDiv.appendChild(text);
+
+        listDiv.appendChild(document.createElement('br'));
+
+        const clearButton = document.createElement('button');
+        clearButton.type = 'button';
+        clearButton.textContent = '전체 삭제';
+        clearButton.style.color = 'red';
+        clearButton.style.cursor = 'pointer';
+        clearButton.style.border = 'none';
+        clearButton.style.background = 'transparent';
+        clearButton.style.padding = '0';
+        clearButton.style.fontSize = '0.85rem';
+        clearButton.addEventListener('click', clearCustom);
+        listDiv.appendChild(clearButton);
     }
 }
 

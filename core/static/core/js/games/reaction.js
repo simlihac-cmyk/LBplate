@@ -16,8 +16,16 @@ const attemptEl = document.getElementById('current-attempt');
 document.addEventListener('DOMContentLoaded', () => {
     loadRanking();
     
-    area.addEventListener('mousedown', handleClick);
-    area.addEventListener('touchstart', (e) => { e.preventDefault(); handleClick(); });
+    if (area) {
+        area.addEventListener('mousedown', handleClick);
+        area.addEventListener('touchstart', (e) => { e.preventDefault(); handleClick(); });
+    }
+
+    const submitScoreBtn = document.getElementById('submit-score-btn');
+    if (submitScoreBtn) submitScoreBtn.addEventListener('click', submitScore);
+
+    const closeModalBtn = document.getElementById('close-modal-btn');
+    if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
 });
 
 function handleClick() {

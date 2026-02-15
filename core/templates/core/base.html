@@ -7,14 +7,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>{% block title %}미생물의 똑똑한 하루{% endblock %}</title>
-    <meta name="description" content="소소한 블로그와 미니게임, 돌림판과 사다리타기">
+    <meta name="description" content="{% block meta_description %}소소한 블로그와 미니게임, 돌림판과 사다리타기{% endblock %}">
     <meta name="keywords" content="미생물의 똑똑한 하루, 미생물 게임, 2048, 워들, 살모넬라, 생명과학 블로그">
-    <link rel="canonical" href="https://monosaccharide180.com/">
+    <link rel="canonical" href="{% block canonical_url %}{{ request.build_absolute_uri }}{% endblock %}">
     
-    <meta property="og:title" content="smart microbe">
-    <meta property="og:description" content="소소한 블로그와 미니게임, 돌림판과 사다리타기">
-    <meta property="og:image" content="{% static 'core/img/og-image.png' %}">
-    <meta property="og:url" content="https://monosaccharide180.com/">
+    <meta property="og:title" content="{% block og_title %}미생물의 똑똑한 하루{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}소소한 블로그와 미니게임, 돌림판과 사다리타기{% endblock %}">
+    <meta property="og:image" content="{% static 'core/img/favicon.png' %}">
+    <meta property="og:url" content="{{ request.build_absolute_uri }}">
+    <meta property="og:type" content="website">
     
     <link rel="icon" type="image/png" href="{% static 'core/img/favicon.png' %}">
     <link rel="apple-touch-icon" href="{% static 'core/img/favicon.png' %}">
@@ -43,10 +44,6 @@
         {% block content %}
         {% endblock %}
     </main>
-
-    <script src="{% static 'core/js/daily_pick.js' %}?v=2"></script>
-    
-    <script src="{% static 'core/js/roulette.js' %}"></script>
 
     {% block extra_script %}
     {% endblock %}

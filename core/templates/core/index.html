@@ -1,6 +1,8 @@
 {% extends 'core/base.html' %}
 {% load static %}
 
+{% block og_title %}smart microbe{% endblock %}
+
 {% block content %}
 <div class="container">
     <div class="card col-2 row-2" id="blog">
@@ -24,7 +26,7 @@
         </div>
     </div>
 
-    <div class="card" onclick="showFortune()" style="cursor: pointer;">
+    <div class="card" id="fortuneCard" style="cursor: pointer;">
         <span class="card-label">Daily Pick</span>
         <h3 class="card-title" id="fortune-title">오늘의 문구</h3>
         <p id="fortune-display" style="transition: opacity 0.3s ease; font-size: 0.9rem; color: var(--text-dim); margin-top: 10px;">
@@ -85,4 +87,8 @@
     .blog-item { border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 10px; margin-bottom: 10px; }
     .blog-item:last-child { border-bottom: none; }
 </style>
+{% endblock %}
+
+{% block extra_script %}
+<script src="{% static 'core/js/daily_pick.js' %}?v=2"></script>
 {% endblock %}

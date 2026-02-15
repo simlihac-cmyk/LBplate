@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 import os
+from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,26 +21,62 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
+def _env_flag(name, default=False):
+    return os.getenv(name, str(default)).strip().lower() in ('1', 'true', 'yes', 'on')
+
+
+def _env_list(name, default=""):
+    raw = os.getenv(name, default)
+    return [item.strip() for item in raw.split(',') if item.strip()]
+
+
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-#*r!)5qkk78&kk)vmwc5r)(ql5t_aum01zkoq2j!apll_tmg1d'
+DEFAULT_SECRET_KEY = 'django-insecure-#*r!)5qkk78&kk)vmwc5r)(ql5t_aum01zkoq2j!apll_tmg1d'
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', DEFAULT_SECRET_KEY)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEV_MODE = False
+DEV_MODE = _env_flag('DJANGO_DEV_MODE', True)
+DEBUG = _env_flag('DJANGO_DEBUG', DEV_MODE)
 
-if DEV_MODE:
-    DEBUG = True
-    ALLOWED_HOSTS = ['*'] # 개발 편의를 위해 모든 접속 허용
+DEFAULT_ALLOWED_HOSTS = 'monosaccharide180.com,127.0.0.1,localhost,100.74.55.70'
+if DEBUG:
+    ALLOWED_HOSTS = _env_list('DJANGO_ALLOWED_HOSTS', '*')
 else:
-    DEBUG = False
-    ALLOWED_HOSTS = [
-        'monosaccharide180.com', 
-        '127.0.0.1', 
-        'localhost', 
-        '100.74.55.70'
-    ]
-CSRF_TRUSTED_ORIGINS = [
-    'https://monosaccharide180.com',
-]
+    ALLOWED_HOSTS = _env_list('DJANGO_ALLOWED_HOSTS', DEFAULT_ALLOWED_HOSTS)
+
+CSRF_TRUSTED_ORIGINS = _env_list(
+    'DJANGO_CSRF_TRUSTED_ORIGINS',
+    'https://monosaccharide180.com'
+)
+
+if not DEBUG and SECRET_KEY == DEFAULT_SECRET_KEY:
+    raise ImproperlyConfigured(
+        'Production requires DJANGO_SECRET_KEY to be set to a secure value.'
+    )
+
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
+SECURE_REFERRER_POLICY = os.getenv(
+    'DJANGO_SECURE_REFERRER_POLICY',
+    'same-origin'
+)
+
+if _env_flag('DJANGO_USE_X_FORWARDED_PROTO', True):
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+if DEBUG:
+    SECURE_SSL_REDIRECT = False
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+else:
+    SECURE_SSL_REDIRECT = _env_flag('DJANGO_SECURE_SSL_REDIRECT', True)
+    SESSION_COOKIE_SECURE = _env_flag('DJANGO_SESSION_COOKIE_SECURE', True)
+    CSRF_COOKIE_SECURE = _env_flag('DJANGO_CSRF_COOKIE_SECURE', True)
+    SECURE_HSTS_SECONDS = int(os.getenv('DJANGO_SECURE_HSTS_SECONDS', '31536000'))
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = _env_flag('DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS', True)
+    SECURE_HSTS_PRELOAD = _env_flag('DJANGO_SECURE_HSTS_PRELOAD', True)
 
 # Application definition
 
@@ -147,6 +184,17 @@ SITE_ID = 1
 
 WORD2VEC_MODEL_PATH = os.path.join(BASE_DIR, 'models', 'cc.ko.300.vec')
 WORD2VEC_LIMIT = 300000
+WP_REQUEST_TIMEOUT = int(os.getenv('WP_REQUEST_TIMEOUT', '5'))
+WP_BASE_URL = os.getenv('WP_BASE_URL', 'http://127.0.0.1:4080/wp-json/wp/v2')
+MAX_2048_SCORE = int(os.getenv('MAX_2048_SCORE', '2000000'))
+MIN_REACTION_SCORE = int(os.getenv('MIN_REACTION_SCORE', '50'))
+MAX_REACTION_SCORE = int(os.getenv('MAX_REACTION_SCORE', '3000'))
+GAME_RANK_POST_RATE_LIMIT = int(os.getenv('GAME_RANK_POST_RATE_LIMIT', '10'))
+GAME_RANK_POST_RATE_WINDOW = int(os.getenv('GAME_RANK_POST_RATE_WINDOW', '60'))
+KKOMANTLE_POST_RATE_LIMIT = int(os.getenv('KKOMANTLE_POST_RATE_LIMIT', '45'))
+KKOMANTLE_POST_RATE_WINDOW = int(os.getenv('KKOMANTLE_POST_RATE_WINDOW', '60'))
+KKOMANTLE_MAX_WORD_LENGTH = int(os.getenv('KKOMANTLE_MAX_WORD_LENGTH', '30'))
+KKOMANTLE_WORD_REGEX = os.getenv('KKOMANTLE_WORD_REGEX', r'^[0-9A-Za-z가-힣_]+$')
 
 
 # 2. 정적 파일 모으는 곳 (항상 설정되어 있어야 함!)

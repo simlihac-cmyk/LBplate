@@ -1,151 +1,165 @@
-// 전역 변수 설정
 const input = document.getElementById('wordInput');
 const list = document.getElementById('guessList');
 const submitBtn = document.getElementById('submitBtn');
 const successArea = document.getElementById('successArea');
 const statusText = document.getElementById('statusText');
+const guessForm = document.getElementById('guessForm');
+const shareBtn = document.getElementById('shareBtn');
 
-let guesses = []; // 추측 기록 저장
+let guesses = [];
 let isGameOver = false;
 
-// 엔터키 입력 리스너
-input.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter' && !isGameOver) submitGuess();
-});
+function setStatus(message, isError = false) {
+    if (!statusText) return;
+    statusText.innerText = message;
+    statusText.style.color = isError ? '#d93025' : '#666';
+}
 
-// 추측 제출 함수
-function submitGuess() {
+function setSubmitting(isSubmitting) {
+    submitBtn.disabled = isSubmitting || isGameOver;
+    submitBtn.innerText = isSubmitting ? '...' : '추측하기';
+}
+
+if (guessForm) {
+    guessForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        submitGuess();
+    });
+}
+
+if (shareBtn) {
+    shareBtn.addEventListener('click', shareResult);
+}
+
+async function submitGuess() {
     if (isGameOver) return;
-    
+
     const word = input.value.trim();
     if (!word) return;
 
-    // 중복 체크
-    if (guesses.some(g => g.word === word)) {
-        alert("이미 입력한 단어입니다!");
+    if (guesses.some((g) => g.word === word)) {
+        setStatus('이미 입력한 단어입니다.', true);
         input.value = '';
         return;
     }
 
-    // 로딩 표시
-    submitBtn.disabled = true;
-    submitBtn.innerText = "...";
+    setSubmitting(true);
+    setStatus('단어를 확인하는 중입니다...');
 
-    // 서버로 전송 (HTML에서 넘겨받은 GAME_CONFIG 사용)
-    fetch(GAME_CONFIG.apiUrl, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": GAME_CONFIG.csrfToken 
-        },
-        body: JSON.stringify({ word: word })
-    })
-    .then(res => res.json())
-    .then(data => {
-        submitBtn.disabled = false;
-        submitBtn.innerText = "추측하기";
+    try {
+        const response = await fetch(GAME_CONFIG.apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': GAME_CONFIG.csrfToken,
+            },
+            body: JSON.stringify({ word }),
+        });
 
-        if (data.result === 'fail' || data.result === 'error') {
-            alert(data.message);
+        const data = await response.json();
+        setSubmitting(false);
+
+        if (!response.ok || data.result === 'fail' || data.result === 'error') {
+            setStatus(data.message || '처리 중 오류가 발생했습니다.', true);
         } else {
-            // 성공하면 리스트에 추가
             addGuess(word, data.score, data.rank, data.result === 'correct');
+            setStatus('좋아요! 다음 단어도 시도해보세요.');
         }
+
         input.value = '';
         input.focus();
-    })
-    .catch(err => {
-        submitBtn.disabled = false;
-        submitBtn.innerText = "추측하기";
+    } catch (err) {
         console.error(err);
-        alert("서버 연결에 실패했습니다.");
-    });
+        setSubmitting(false);
+        setStatus('서버 연결에 실패했습니다.', true);
+    }
 }
 
-// 화면에 리스트 추가 함수
 function addGuess(word, score, rank, isCorrect) {
-    // 기록 추가
     guesses.push({ word, score, rank, isCorrect });
-    
-    // 정답일 경우 게임 종료 처리
+
     if (isCorrect) {
         isGameOver = true;
-        statusText.innerText = "오늘의 단어를 찾았습니다!";
+        setStatus('오늘의 단어를 찾았습니다!');
         input.disabled = true;
         submitBtn.disabled = true;
-        
-        // 성공 모달 보여주기
+
         successArea.style.display = 'block';
         document.getElementById('finalCount').innerText = guesses.length;
     }
 
-    // 점수 높은 순으로 정렬 (정답이 항상 맨 위로 오게)
     guesses.sort((a, b) => b.score - a.score);
-    
     renderList();
 }
 
-// 리스트 렌더링 함수
 function renderList() {
-    list.innerHTML = ''; // 싹 지우고 다시 그리기
-    
-    guesses.forEach(g => {
+    list.innerHTML = '';
+
+    guesses.forEach((guess) => {
         const li = document.createElement('li');
-        
+        li.className = 'guess-item';
+
         let rankClass = 'rank-cold';
-        let rankText = g.rank;
-
-        // 스타일 결정
-        if (g.isCorrect) {
+        if (guess.isCorrect) {
             rankClass = 'rank-correct';
-            rankText = '🎉 정답';
+        } else if (typeof guess.rank === 'number' && guess.rank <= 1000) {
+            rankClass = 'rank-hot';
         }
-        else if (typeof g.rank === 'number' && g.rank <= 1000) rankClass = 'rank-hot';
-        
-        // 점수가 음수면 0으로 처리 (그래프용)
-        const graphWidth = Math.max(0, g.score);
+        li.classList.add(rankClass);
 
-        li.className = `guess-item ${rankClass}`;
-        li.innerHTML = `
-            <div class="word-col">${g.word}</div>
-            <div class="progress-bg">
-                <div class="progress-fill" style="width: ${graphWidth}%"></div>
-            </div>
-            <div class="score-col">${g.score.toFixed(2)}</div>
-            <div class="rank-col">#${rankText}</div>
-        `;
+        const wordCol = document.createElement('div');
+        wordCol.className = 'word-col';
+        wordCol.textContent = guess.word;
+
+        const progressBg = document.createElement('div');
+        progressBg.className = 'progress-bg';
+
+        const progressFill = document.createElement('div');
+        progressFill.className = 'progress-fill';
+        const graphWidth = Math.max(0, Math.min(100, guess.score));
+        progressFill.style.width = `${graphWidth}%`;
+        progressBg.appendChild(progressFill);
+
+        const scoreCol = document.createElement('div');
+        scoreCol.className = 'score-col';
+        scoreCol.textContent = Number(guess.score).toFixed(2);
+
+        const rankCol = document.createElement('div');
+        rankCol.className = 'rank-col';
+        rankCol.textContent = guess.isCorrect ? '정답' : `#${guess.rank}`;
+
+        li.appendChild(wordCol);
+        li.appendChild(progressBg);
+        li.appendChild(scoreCol);
+        li.appendChild(rankCol);
         list.appendChild(li);
     });
 }
 
-// 공유하기 기능 (스포일러 방지 버전)
-function shareResult() {
-    const today = new Date().toISOString().slice(0, 10); // 날짜
-    const count = guesses.length; // 시도 횟수
-    const link = "https://monosaccharide180.com/games/kkomantle/";
+async function shareResult() {
+    const today = new Date().toISOString().slice(0, 10);
+    const count = guesses.length;
+    const link = 'https://monosaccharide180.com/games/kkomantle/';
 
-    // 1. 기본 문구
     let text = `🧩 꼬맨틀 (${today})\n🎉 ${count}번 만에 정답을 찾았습니다!\n\n`;
+    text += '(상위 기록)\n';
 
-    // 2. 단어는 숨기고 '점수(유사도)'만 보여주기
-    text += "(상위 기록)\n";
-    guesses.slice(0, 5).forEach(g => {
+    guesses.slice(0, 5).forEach((guess) => {
         let emoji = '☁️';
-        if (g.isCorrect) emoji = '☀️';       // 정답
-        else if (g.score >= 40) emoji = '🔥'; // 뜨거움
-        else if (g.score >= 20) emoji = '💧'; // 미지근함
-        
-        // 단어(g.word)는 빼고 점수만 넣습니다!
-        text += `${emoji} ${g.score.toFixed(2)}\n`; 
+        if (guess.isCorrect) emoji = '☀️';
+        else if (guess.score >= 40) emoji = '🔥';
+        else if (guess.score >= 20) emoji = '💧';
+
+        text += `${emoji} ${Number(guess.score).toFixed(2)}\n`;
     });
 
-    // 3. 게임하러 가기 링크
     text += `\n게임하러 가기: ${link}`;
 
-    // 클립보드 복사
-    navigator.clipboard.writeText(text).then(() => {
-        alert("결과가 복사되었습니다! 친구들에게 공유해보세요. 📋");
-    }).catch(err => {
-        alert("복사에 실패했습니다. :(");
-    });
+    try {
+        await navigator.clipboard.writeText(text);
+        setStatus('결과가 복사되었습니다.');
+    } catch (err) {
+        console.error(err);
+        setStatus('복사에 실패했습니다. 수동으로 복사해 주세요.', true);
+    }
 }

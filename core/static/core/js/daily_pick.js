@@ -44,5 +44,17 @@ async function showFortune() {
     }
 }
 
-// 스크립트 로드 확인용 로그
-console.log("LBplate: Daily Pick System Ready.");
+document.addEventListener('DOMContentLoaded', () => {
+    const fortuneCard = document.getElementById('fortuneCard');
+    if (!fortuneCard) return;
+
+    fortuneCard.addEventListener('click', showFortune);
+    fortuneCard.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            showFortune();
+        }
+    });
+    fortuneCard.setAttribute('role', 'button');
+    fortuneCard.setAttribute('tabindex', '0');
+});
