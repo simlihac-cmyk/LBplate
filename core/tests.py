@@ -99,3 +99,28 @@ class CoreViewTests(TestCase):
         self.assertEqual(first.status_code, 200)
         self.assertEqual(second.status_code, 429)
         self.assertEqual(GameRecord.objects.filter(game_type='2048').count(), 1)
+
+    def test_utility_and_policy_pages_are_available(self):
+        urls = [
+            reverse('utility_home'),
+            reverse('policy_privacy'),
+            reverse('policy_terms'),
+            reverse('policy_disclosure'),
+            reverse('contact'),
+        ]
+
+        for url in urls:
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, 200)
+
+    @patch('core.sitemaps.fetch_wp_posts_for_sitemap')
+    def test_sitemap_includes_wordpress_posts(self, mock_fetch_wp_posts):
+        mock_fetch_wp_posts.return_value = [
+            {'id': 42, 'modified_gmt': '2026-02-15T03:10:00'}
+        ]
+
+        response = self.client.get(reverse('django.contrib.sitemaps.views.sitemap'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '/utility/')
+        self.assertContains(response, '/post/42/')

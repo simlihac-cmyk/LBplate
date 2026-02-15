@@ -108,6 +108,14 @@ function finishGame() {
     
     document.getElementById('result-modal').classList.remove('hidden');
     setState('waiting'); // 배경 초기화
+
+    if (window.trackEvent) {
+        window.trackEvent('game_finish', {
+            event_category: 'games',
+            event_label: 'reaction',
+            score: finalAverage,
+        });
+    }
 }
 
 function closeModal() {
@@ -140,6 +148,13 @@ function submitScore() {
     .then(res => res.json())
     .then(data => {
         if (data.status === 'success') {
+            if (window.trackEvent) {
+                window.trackEvent('ranking_submit', {
+                    event_category: 'games',
+                    event_label: 'reaction',
+                    score: finalAverage,
+                });
+            }
             loadRanking();
             closeModal();
         } else {

@@ -1,12 +1,13 @@
 from django.contrib import admin
 from django.http import HttpResponse
-from django.urls import path, reverse # reverse 추가
-from django.contrib.sitemaps.views import sitemap # 사이트맵 뷰
-from django.contrib import sitemaps
+from django.urls import path
+from django.contrib.sitemaps.views import sitemap
+from core.sitemaps import StaticViewSitemap, WordPressPostSitemap
 from core.views import (
-    home, blog_home, roulette, post_detail, ladder, 
-    game_2048, api_2048_rank, games_lobby, 
-    game_reaction, api_reaction_rank, game_wordle, api_wordle_rank, game_kkomantle, api_kkomantle_guess
+    home, blog_home, roulette, post_detail, ladder, utility_home,
+    game_2048, api_2048_rank, games_lobby,
+    game_reaction, api_reaction_rank, game_wordle, api_wordle_rank, game_kkomantle, api_kkomantle_guess,
+    policy_privacy, policy_terms, policy_disclosure, contact,
 )
 
 # 1. robots.txt 설정
@@ -18,26 +19,9 @@ def robots_txt(request):
     ]
     return HttpResponse("\n".join(lines), content_type="text/plain")
 
-# 2. 사이트맵 설정 (검색 엔진이 읽어갈 페이지들)
-class StaticViewSitemap(sitemaps.Sitemap):
-    protocol = 'https'
-    priority = 0.8  # 중요도 (0.0 ~ 1.0)
-    changefreq = 'daily' # 갱신 빈도
-
-    def items(self):
-        # 검색 결과에 노출하고 싶은 페이지의 name을 넣으세요.
-        # API 관련 경로(rank 등)는 제외하는 것이 좋습니다.
-        return [
-            'home', 'blog_home', 'games_lobby', 
-            'game_2048', 'game_reaction', 'game_wordle', 
-            'ladder', 'roulette', 'game_kkomantle'
-        ]
-
-    def location(self, item):
-        return reverse(item)
-
 sitemaps_dict = {
     'static': StaticViewSitemap,
+    'posts': WordPressPostSitemap,
 }
 
 # 3. URL 패턴
@@ -45,6 +29,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', home, name='home'),
     path('blog/', blog_home, name='blog_home'),
+    path('utility/', utility_home, name='utility_home'),
     path('roulette/', roulette, name='roulette'),
     path('post/<int:post_id>/', post_detail, name='post_detail'),
     path('ladder/', ladder, name='ladder'),
@@ -57,6 +42,10 @@ urlpatterns = [
     path('api/rank/wordle/', api_wordle_rank, name='api_wordle_rank'),
     path('games/kkomantle/', game_kkomantle, name='game_kkomantle'),
     path('api/guess/kkomantle/', api_kkomantle_guess, name='api_kkomantle_guess'),
+    path('policy/privacy/', policy_privacy, name='policy_privacy'),
+    path('policy/terms/', policy_terms, name='policy_terms'),
+    path('policy/disclosure/', policy_disclosure, name='policy_disclosure'),
+    path('contact/', contact, name='contact'),
     
     # robots.txt와 sitemap.xml 경로 추가
     path("robots.txt", robots_txt),

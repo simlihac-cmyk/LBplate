@@ -29,7 +29,10 @@ Required values in `.env.production`:
 - `DJANGO_ALLOWED_HOSTS=monosaccharide180.com,www.monosaccharide180.com`
 - `DJANGO_CSRF_TRUSTED_ORIGINS=https://monosaccharide180.com,https://www.monosaccharide180.com`
 - `WP_BASE_URL=http://127.0.0.1:4080/wp-json/wp/v2`
+- `WP_CACHE_TIMEOUT=300`
+- `WP_SITEMAP_CACHE_TIMEOUT=3600`
 - `DJANGO_USE_X_FORWARDED_PROTO=true`
+- `GA4_MEASUREMENT_ID=G-XXXXXXXXXX`  # 사용하지 않으면 비워도 됨
 
 ## 2) Daily workflow (Dev -> Git -> Deploy)
 

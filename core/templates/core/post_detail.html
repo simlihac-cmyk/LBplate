@@ -24,7 +24,7 @@
         <div class="nav-split-row">
             <div class="nav-item-half">
                 {% if prev_post %}
-                <a href="{% url 'post_detail' prev_post.id %}" class="nav-card">
+                <a href="{% url 'post_detail' prev_post.id %}" class="nav-card" data-track-event="blog_nav_click" data-track-category="blog" data-track-label="prev_post">
                     <span class="nav-dir">← Previous</span>
                     <div class="nav-post-title">{{ prev_post.title.rendered|truncatechars:35 }}</div>
                 </a>
@@ -38,7 +38,7 @@
 
             <div class="nav-item-half">
                 {% if next_post %}
-                <a href="{% url 'post_detail' next_post.id %}" class="nav-card text-right">
+                <a href="{% url 'post_detail' next_post.id %}" class="nav-card text-right" data-track-event="blog_nav_click" data-track-category="blog" data-track-label="next_post">
                     <span class="nav-dir">Next →</span>
                     <div class="nav-post-title">{{ next_post.title.rendered|truncatechars:35 }}</div>
                 </a>
@@ -52,7 +52,7 @@
         </div>
 
         <div class="nav-full-row">
-            <a href="{% url 'blog_home' %}" class="btn-full-home">
+            <a href="{% url 'blog_home' %}" class="btn-full-home" data-track-event="blog_nav_click" data-track-category="blog" data-track-label="back_to_blog_home">
                 블로그 홈으로 돌아가기
             </a>
         </div>
@@ -69,7 +69,7 @@
     </header>
     <footer class="post-view-footer">
         <div class="nav-full-row">
-            <a href="{% url 'blog_home' %}" class="btn-full-home">
+            <a href="{% url 'blog_home' %}" class="btn-full-home" data-track-event="blog_nav_click" data-track-category="blog" data-track-label="not_found_back_to_blog_home">
                 블로그 홈으로 돌아가기
             </a>
         </div>

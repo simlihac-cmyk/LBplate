@@ -21,14 +21,14 @@
         </form>
         <div class="category-quick-tags" style="margin-top: 15px;">
             {% for cat in categories|slice:":5" %}
-                <a href="{% url 'blog_home' %}?category={{ cat.id }}" class="mini-tag">{{ cat.name }}</a>
+                <a href="{% url 'blog_home' %}?category={{ cat.id }}" class="mini-tag" data-track-event="blog_category_click" data-track-category="blog" data-track-label="cat_{{ cat.id }}">{{ cat.name }}</a>
             {% endfor %}
         </div>
     </div>
 
     {% if posts %}
         {% for post in posts %}
-        <a href="{% url 'post_detail' post.id %}" class="card-wrapper col-2">
+        <a href="{% url 'post_detail' post.id %}" class="card-wrapper col-2" data-track-event="blog_post_click" data-track-category="blog" data-track-label="blog_home_post_{{ post.id }}">
             <div class="card post-full-card">
                 <span class="card-label">{{ post.date|slice:":10" }}</span>
                 <h2 class="card-title">{{ post.title.rendered|truncatechars:40 }}</h2>
@@ -47,18 +47,19 @@
     <div class="card col-4 pagination-card">
         <div class="pagination-wrapper">
             {% if current_page > 1 %}
-                <a href="{% url 'blog_home' %}?page={{ current_page|add:'-1' }}{% if search_query %}&search={{ search_query }}{% endif %}" class="page-link">Prev</a>
+                <a href="{% url 'blog_home' %}?page={{ current_page|add:'-1' }}{% if search_query %}&search={{ search_query }}{% endif %}" class="page-link" data-track-event="blog_pagination_click" data-track-category="blog" data-track-label="prev">Prev</a>
             {% endif %}
             
             {% for p in page_range %}
                 <a href="{% url 'blog_home' %}?page={{ p }}{% if search_query %}&search={{ search_query }}{% endif %}"
-                   class="page-link {% if current_page == p %}active{% endif %}">
+                   class="page-link {% if current_page == p %}active{% endif %}"
+                   data-track-event="blog_pagination_click" data-track-category="blog" data-track-label="page_{{ p }}">
                     {{ p }}
                 </a>
             {% endfor %}
 
             {% if current_page < total_pages %}
-                <a href="{% url 'blog_home' %}?page={{ current_page|add:'1' }}{% if search_query %}&search={{ search_query }}{% endif %}" class="page-link">Next</a>
+                <a href="{% url 'blog_home' %}?page={{ current_page|add:'1' }}{% if search_query %}&search={{ search_query }}{% endif %}" class="page-link" data-track-event="blog_pagination_click" data-track-category="blog" data-track-label="next">Next</a>
             {% endif %}
         </div>
     </div>

@@ -233,6 +233,15 @@ function showModal(success) {
     }
     
     modal.classList.remove('hidden'); // display: block 처리
+
+    if (window.trackEvent) {
+        window.trackEvent('game_finish', {
+            event_category: 'games',
+            event_label: 'wordle',
+            result: success ? 'success' : 'fail',
+            attempts: currentRow + 1,
+        });
+    }
 }
 
 function closeModal() {
@@ -264,6 +273,13 @@ function submitScore() {
     .then(res => res.json())
     .then(data => {
         if (data.status === 'success') {
+            if (window.trackEvent) {
+                window.trackEvent('ranking_submit', {
+                    event_category: 'games',
+                    event_label: 'wordle',
+                    score: currentRow + 1,
+                });
+            }
             loadRanking();
             closeModal();
         } else {

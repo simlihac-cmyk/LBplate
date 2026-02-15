@@ -190,6 +190,13 @@ function checkGameOver() {
 function showGameOver() {
     document.getElementById('final-score').innerText = score;
     document.getElementById('game-over-modal').classList.remove('hidden');
+    if (window.trackEvent) {
+        window.trackEvent('game_finish', {
+            event_category: 'games',
+            event_label: '2048',
+            score: score,
+        });
+    }
 }
 
 function closeModal() {
@@ -215,6 +222,13 @@ function submitScore() {
     .then(res => res.json())
     .then(data => {
         if (data.status === 'success') {
+            if (window.trackEvent) {
+                window.trackEvent('ranking_submit', {
+                    event_category: 'games',
+                    event_label: '2048',
+                    score: score,
+                });
+            }
             loadRanking();
             closeModal();
         } else {

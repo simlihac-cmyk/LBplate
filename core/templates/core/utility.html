@@ -1,0 +1,100 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Utility Hub - 미생물의 똑똑한 하루{% endblock %}
+{% block og_title %}Utility Hub - 미생물의 똑똑한 하루{% endblock %}
+{% block meta_description %}돌림판과 사다리타기를 한 곳에서 실행할 수 있는 유틸리티 허브입니다.{% endblock %}
+
+{% block content %}
+<div class="lobby-container">
+    <div class="lobby-header">
+        <h1>Utility Hub</h1>
+        <p>빠르게 선택하고 바로 실행하는 도구 모음</p>
+    </div>
+
+    <div class="utility-grid">
+        <a href="{% url 'roulette' %}" class="utility-card" data-track-event="utility_tool_click" data-track-category="utility" data-track-label="roulette">
+            <div class="utility-icon">🎡</div>
+            <div>
+                <h2>돌림판</h2>
+                <p>점심 메뉴, 예/아니오, 커스텀 항목까지 빠르게 선택</p>
+            </div>
+        </a>
+
+        <a href="{% url 'ladder' %}" class="utility-card" data-track-event="utility_tool_click" data-track-category="utility" data-track-label="ladder">
+            <div class="utility-icon">🪜</div>
+            <div>
+                <h2>사다리타기</h2>
+                <p>참가자별 결과를 시각적으로 확인하는 경로 추적 도구</p>
+            </div>
+        </a>
+    </div>
+</div>
+
+<style>
+    .lobby-container {
+        max-width: 900px;
+        margin: 40px auto 60px;
+        padding: 0 20px;
+    }
+
+    .lobby-header {
+        margin-bottom: 28px;
+    }
+
+    .lobby-header h1 {
+        font-size: 2.2rem;
+        line-height: 1.2;
+        margin-bottom: 8px;
+    }
+
+    .lobby-header p {
+        color: var(--text-dim);
+    }
+
+    .utility-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+    }
+
+    .utility-card {
+        display: flex;
+        gap: 14px;
+        align-items: flex-start;
+        text-decoration: none;
+        color: inherit;
+        border: 1px solid var(--glass-border);
+        background: var(--glass-bg);
+        border-radius: 20px;
+        padding: 20px;
+        box-shadow: var(--card-shadow);
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .utility-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+    }
+
+    .utility-icon {
+        font-size: 2rem;
+        line-height: 1;
+    }
+
+    .utility-card h2 {
+        font-size: 1.2rem;
+        margin-bottom: 6px;
+    }
+
+    .utility-card p {
+        color: var(--text-dim);
+        font-size: 0.9rem;
+    }
+
+    @media (max-width: 768px) {
+        .utility-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}

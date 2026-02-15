@@ -35,6 +35,13 @@ async function showFortune() {
             displayArea.style.color = "var(--text-main)";
             displayArea.style.fontSize = "0.95rem";
             displayArea.style.fontWeight = "500";
+
+            if (window.trackEvent) {
+                window.trackEvent('daily_pick_reveal', {
+                    event_category: 'engagement',
+                    event_label: 'daily_pick_card',
+                });
+            }
         }, 300);
 
     } catch (error) {

@@ -61,6 +61,38 @@ nav {
     transition: 0.3s; 
 }
 
+main {
+    min-height: calc(100vh - 190px);
+}
+
+.site-footer {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px 20px 36px;
+}
+
+.footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.footer-links a {
+    font-size: 0.85rem;
+    text-decoration: none;
+    color: var(--text-dim);
+}
+
+.footer-links a:hover {
+    color: var(--text-main);
+}
+
+.footer-copy {
+    margin-top: 10px;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+}
+
 /* Bento Grid Layout */
 .container {
     max-width: 1200px;
@@ -100,6 +132,7 @@ nav {
     flex-direction: column;
     justify-content: space-between;
     width: 100%; /* 부모 너비 꽉 채우기 */
+    position: relative;
 }
 
 .card:hover {
@@ -178,5 +211,9 @@ nav {
 
     .util-icon {
         font-size: 1.8rem;
+    }
+
+    .site-footer {
+        padding: 18px 16px 24px;
     }
 }

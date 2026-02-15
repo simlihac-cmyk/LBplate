@@ -8,6 +8,7 @@
 {% block content %}
 <div class="game-wrapper">
     <div class="game-header">
+        <a href="{% url 'utility_home' %}" data-track-event="utility_nav_click" data-track-category="utility" data-track-label="ladder_back_to_hub" style="display: inline-block; margin-bottom: 8px; color: var(--accent-color); text-decoration: none; font-weight: 600;">← Utility Hub로 돌아가기</a>
         <h1>LUCKY LADDER</h1>
         <p>운명의 사다리 타기</p>
     </div>
@@ -42,5 +43,5 @@
 {% endblock %}
 
 {% block extra_script %}
-<script src="{% static 'core/js/ladder.js' %}"></script>
+<script src="{% static 'core/js/ladder.js' %}?v=2"></script>
 {% endblock %}

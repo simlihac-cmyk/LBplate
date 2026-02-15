@@ -5,6 +5,7 @@
 
 {% block content %}
 <div class="container" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80vh; padding-top: 40px;">
+    <a href="{% url 'utility_home' %}" data-track-event="utility_nav_click" data-track-category="utility" data-track-label="roulette_back_to_hub" style="margin-bottom: 16px; color: var(--accent-color); text-decoration: none; font-weight: 600;">← Utility Hub로 돌아가기</a>
     <h1 style="margin-bottom: 40px; font-weight: 800; letter-spacing: -1px;">Select Category</h1>
     
     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; width: 100%; max-width: 900px;">
@@ -54,5 +55,5 @@
 {% endblock %}
 
 {% block extra_script %}
-<script src="{% static 'core/js/roulette.js' %}"></script>
+<script src="{% static 'core/js/roulette.js' %}?v=2"></script>
 {% endblock %}

@@ -5,6 +5,7 @@ import random  # [추가됨] 데일리 단어 뽑기에 필수
 import datetime # [추가됨] 날짜 처리에 필수
 import re
 import time
+import hashlib
 from django.conf import settings
 from gensim.models import KeyedVectors
 from django.shortcuts import render
@@ -16,6 +17,7 @@ from .models import GameRecord
 # 워드프레스 API 기본 주소 설정
 WP_BASE_URL = getattr(settings, 'WP_BASE_URL', 'http://127.0.0.1:4080/wp-json/wp/v2')
 WP_REQUEST_TIMEOUT = getattr(settings, 'WP_REQUEST_TIMEOUT', 5)
+WP_CACHE_TIMEOUT = getattr(settings, 'WP_CACHE_TIMEOUT', 300)
 
 # settings.py에서 설정 가져오기
 MODEL_PATH = getattr(settings, 'WORD2VEC_MODEL_PATH', None)
@@ -25,14 +27,44 @@ model = None
 CANDIDATES = [] # 정답 후보 단어 리스트
 
 
-def fetch_wp_json(endpoint, params=None):
+def _wp_cache_key(endpoint, params):
+    payload = json.dumps(
+        {'endpoint': endpoint, 'params': params or {}},
+        sort_keys=True,
+        ensure_ascii=True,
+        separators=(',', ':')
+    )
+    digest = hashlib.sha256(payload.encode('utf-8')).hexdigest()
+    return f'wp-json:{digest}'
+
+
+def fetch_wp_json(endpoint, params=None, cache_timeout=None):
+    params = params or {}
+    timeout = WP_CACHE_TIMEOUT if cache_timeout is None else cache_timeout
+    cache_key = None
+
+    if timeout > 0:
+        cache_key = _wp_cache_key(endpoint, params)
+        cached = cache.get(cache_key)
+        if cached:
+            return cached['data'], cached['headers']
+
     response = requests.get(
         f"{WP_BASE_URL}/{endpoint}",
         params=params,
         timeout=WP_REQUEST_TIMEOUT
     )
     response.raise_for_status()
-    return response.json(), response.headers
+    data = response.json()
+    headers = {
+        'X-WP-TotalPages': response.headers.get('X-WP-TotalPages', '1'),
+        'X-WP-Total': response.headers.get('X-WP-Total', '0'),
+    }
+
+    if cache_key:
+        cache.set(cache_key, {'data': data, 'headers': headers}, timeout=timeout)
+
+    return data, headers
 
 
 def normalize_player_name(raw_name):
@@ -249,11 +281,15 @@ def api_kkomantle_guess(request):
 def home(request):
     """대시보드 홈: 최근 글 3개만 요약 노출"""
     try:
-        posts, _ = fetch_wp_json('posts', {'_embed': True, 'per_page': 3})
+        posts, _ = fetch_wp_json('posts', {'_embed': True, 'per_page': 3}, cache_timeout=300)
     except Exception as e:
         print(f"Error fetching posts: {e}")
         posts = []
     return render(request, 'core/index.html', {'posts': posts})
+
+
+def utility_home(request):
+    return render(request, 'core/utility.html')
 
 def blog_home(request):
     """블로그 메인: 카테고리 필터, 검색, 페이지네이션 지원"""
@@ -274,13 +310,13 @@ def blog_home(request):
 
     try:
         # 1. 포스트 목록 가져오기
-        posts, posts_headers = fetch_wp_json('posts', params)
+        posts, posts_headers = fetch_wp_json('posts', params, cache_timeout=300)
         
         # 2. 전체 페이지 수 파악
         total_pages = int(posts_headers.get('X-WP-TotalPages', 1))
         
         # 3. 카테고리 목록 가져오기
-        categories, _ = fetch_wp_json('categories')
+        categories, _ = fetch_wp_json('categories', cache_timeout=900)
     except Exception:
         posts, categories, total_pages = [], [], 1
 
@@ -302,7 +338,7 @@ def post_detail(request, post_id):
     next_post = None
 
     try:
-        post, _ = fetch_wp_json(f'posts/{post_id}', {'_embed': True})
+        post, _ = fetch_wp_json(f'posts/{post_id}', {'_embed': True}, cache_timeout=600)
         
         # 카테고리 이름 가공
         if '_embedded' in post and 'wp:term' in post['_embedded']:
@@ -317,10 +353,10 @@ def post_detail(request, post_id):
             # 이전글/다음글 로직
             prev_posts, _ = fetch_wp_json('posts', {
                 'categories': category_id, 'before': post['date'], 'per_page': 1, 'orderby': 'date', 'order': 'desc'
-            })
+            }, cache_timeout=300)
             next_posts, _ = fetch_wp_json('posts', {
                 'categories': category_id, 'after': post['date'], 'per_page': 1, 'orderby': 'date', 'order': 'asc'
-            })
+            }, cache_timeout=300)
             if prev_posts:
                 prev_post = prev_posts[0]
             if next_posts:
@@ -346,6 +382,22 @@ def ladder(request):
 
 def games_lobby(request):
     return render(request, 'core/games/lobby.html')
+
+
+def policy_privacy(request):
+    return render(request, 'core/policy/privacy.html')
+
+
+def policy_terms(request):
+    return render(request, 'core/policy/terms.html')
+
+
+def policy_disclosure(request):
+    return render(request, 'core/policy/disclosure.html')
+
+
+def contact(request):
+    return render(request, 'core/contact.html')
 
 # --- 2048 게임 ---
 def game_2048(request):

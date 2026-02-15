@@ -186,6 +186,12 @@ function spinWheel() {
     }
     
     isSpinning = true;
+    if (window.trackEvent) {
+        window.trackEvent('utility_use', {
+            event_category: 'utility',
+            event_label: 'roulette_spin',
+        });
+    }
     const resultDisplay = document.getElementById('result-display');
     resultDisplay.innerText = "두구두구...";
 
@@ -222,5 +228,13 @@ function finalizeResult() {
     );
     
     const actualIndex = (winningIndex + currentItems.length) % currentItems.length;
-    document.getElementById('result-display').innerText = `결과: ${currentItems[actualIndex]}`;
+    const resultValue = currentItems[actualIndex];
+    document.getElementById('result-display').innerText = `결과: ${resultValue}`;
+    if (window.trackEvent) {
+        window.trackEvent('utility_result', {
+            event_category: 'utility',
+            event_label: 'roulette_result',
+            result: resultValue,
+        });
+    }
 }

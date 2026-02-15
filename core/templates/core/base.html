@@ -20,7 +20,7 @@
     <link rel="icon" type="image/png" href="{% static 'core/img/favicon.png' %}">
     <link rel="apple-touch-icon" href="{% static 'core/img/favicon.png' %}">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
-    <link rel="stylesheet" href="{% static 'core/css/style.css' %}?v=1.0">
+    <link rel="stylesheet" href="{% static 'core/css/style.css' %}?v=1.1">
     
     {% block extra_css %}{% endblock %}
     {% block extra_head %}{% endblock %}
@@ -32,11 +32,11 @@
         </a>
         
         <div class="nav-links">
-            <a href="{% url 'blog_home' %}">Blog</a>
+            <a href="{% url 'blog_home' %}" data-track-event="nav_click" data-track-category="navigation" data-track-label="blog">Blog</a>
             
-            <a href="{% url 'home' %}#utility">Utility</a>
+            <a href="{% url 'utility_home' %}" data-track-event="nav_click" data-track-category="navigation" data-track-label="utility">Utility</a>
             
-            <a href="{% url 'games_lobby' %}">Games</a>
+            <a href="{% url 'games_lobby' %}" data-track-event="nav_click" data-track-category="navigation" data-track-label="games">Games</a>
         </div>
     </nav>
 
@@ -45,7 +45,53 @@
         {% endblock %}
     </main>
 
+    <footer class="site-footer">
+        <div class="footer-links">
+            <a href="{% url 'policy_privacy' %}" data-track-event="policy_click" data-track-category="policy" data-track-label="privacy">개인정보처리방침</a>
+            <a href="{% url 'policy_terms' %}" data-track-event="policy_click" data-track-category="policy" data-track-label="terms">이용약관</a>
+            <a href="{% url 'policy_disclosure' %}" data-track-event="policy_click" data-track-category="policy" data-track-label="disclosure">광고/제휴 고지</a>
+            <a href="{% url 'contact' %}" data-track-event="policy_click" data-track-category="policy" data-track-label="contact">문의</a>
+        </div>
+        <p class="footer-copy">© {% now "Y" %} 미생물의 똑똑한 하루</p>
+    </footer>
+
     {% block extra_script %}
     {% endblock %}
+
+    {% if GA4_MEASUREMENT_ID %}
+    <script async src="https://www.googletagmanager.com/gtag/js?id={{ GA4_MEASUREMENT_ID }}"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){window.dataLayer.push(arguments);}
+        window.gtag = gtag;
+        gtag('js', new Date());
+        gtag('config', '{{ GA4_MEASUREMENT_ID }}');
+
+        window.trackEvent = function(eventName, params) {
+            if (!window.gtag || !eventName) return;
+            gtag('event', eventName, params || {});
+        };
+    </script>
+    {% else %}
+    <script>
+        window.trackEvent = function() {};
+    </script>
+    {% endif %}
+    <script>
+        document.addEventListener('click', function(event) {
+            var target = event.target.closest('[data-track-event]');
+            if (!target) return;
+
+            var eventName = target.getAttribute('data-track-event');
+            var eventCategory = target.getAttribute('data-track-category') || 'engagement';
+            var eventLabel = target.getAttribute('data-track-label') || (target.textContent || '').trim().slice(0, 80);
+
+            window.trackEvent(eventName, {
+                event_category: eventCategory,
+                event_label: eventLabel,
+                page_path: window.location.pathname
+            });
+        });
+    </script>
 </body>
 </html>

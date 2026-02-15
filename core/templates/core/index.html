@@ -1,19 +1,20 @@
 {% extends 'core/base.html' %}
 {% load static %}
 
-{% block og_title %}smart microbe{% endblock %}
+{% block og_title %}미생물의 똑똑한 하루{% endblock %}
+{% block meta_description %}미니게임, 유틸리티 도구, 블로그 업데이트를 한 곳에서 즐겨보세요.{% endblock %}
 
 {% block content %}
 <div class="container">
     <div class="card col-2 row-2" id="blog">
         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <span class="card-label">Recent Updates</span>
-            <a href="{% url 'blog_home' %}" style="font-size: 0.75rem; color: var(--accent-color); text-decoration: none; font-weight: 700;">View All →</a>
+            <a href="{% url 'blog_home' %}" data-track-event="blog_view_all_click" data-track-category="blog" data-track-label="home_blog_view_all" style="font-size: 0.75rem; color: var(--accent-color); text-decoration: none; font-weight: 700;">View All →</a>
         </div>
         <div class="blog-list">
             {% if posts %}
                 {% for post in posts|slice:":3" %}
-                <a href="{% url 'post_detail' post.id %}" class="blog-link">
+                <a href="{% url 'post_detail' post.id %}" class="blog-link" data-track-event="blog_post_click" data-track-category="blog" data-track-label="home_post_{{ post.id }}">
                     <div class="blog-item">
                         <h4>{{ post.title.rendered }}</h4>
                         <p>{{ post.excerpt.rendered|striptags|truncatechars:60 }}</p>
@@ -35,16 +36,20 @@
         <div class="util-icon">✨</div>
     </div>
 
-    <a href="{% url 'roulette' %}" class="card grid-item">
-        <span class="card-label">Tool</span>
-        <div class="card-title">돌림판</div>
+    <a href="{% url 'utility_home' %}" class="card col-2" id="utility" data-track-event="utility_hub_click" data-track-category="utility" data-track-label="home_utility_hub">
+        <span class="card-label">Utility</span>
+        <div class="card-title">도구 모음</div>
         <p style="font-size: 0.85rem; color: var(--text-dim); margin-top: 8px;">
-            멀티 룰렛 도구 실행
+            돌림판과 사다리타기를 한 곳에서 실행
         </p>
-        <div class="util-icon">🎡</div>
+        <div style="display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap;">
+            <span class="utility-chip">돌림판</span>
+            <span class="utility-chip">사다리타기</span>
+        </div>
+        <div class="util-icon" style="font-size: 1.4rem; position: absolute; bottom: 20px; right: 20px;">🧰</div>
     </a>
 
-    <a href="{% url 'games_lobby' %}" class="card col-2" id="games">
+    <a href="{% url 'games_lobby' %}" class="card col-2" id="games" data-track-event="games_lobby_click" data-track-category="games" data-track-label="home_games_lobby">
         <span class="card-label">Entertainment</span>
         <div class="card-title">Mini Games</div>
         <div style="display: flex; gap: 15px; margin-top: 15px; font-size: 0.9rem; color: var(--accent-color); font-weight: 600;">
@@ -57,18 +62,12 @@
         <div class="util-icon" style="font-size: 1.5rem; position: absolute; bottom: 20px; right: 20px;">🎮</div>
     </a>
 
-    <a href="{% url 'ladder' %}" class="card grid-item">
-        <span class="card-label">Tool</span>
-        <div class="card-title">사다리 타기</div>
-        <p style="font-size: 0.85rem; color: var(--text-dim); margin-top: 8px;">
-            경로 추적 게임
-        </p>
-        <div class="util-icon">🪜</div>
-    </a>
-
     <div class="card">
-        <span class="card-label">Coming Soon</span>
-        <div class="card-title">새로운 기능</div>
+        <span class="card-label">Monetization</span>
+        <div class="card-title">제휴/광고 준비 중</div>
+        <p style="font-size: 0.85rem; color: var(--text-dim); margin-top: 8px;">
+            정책 페이지와 측정 환경을 정비하고 있어요.
+        </p>
         <div class="util-icon">➕</div>
     </div>
 </div>
@@ -86,9 +85,17 @@
     .blog-link { text-decoration: none; color: inherit; display: block; }
     .blog-item { border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 10px; margin-bottom: 10px; }
     .blog-item:last-child { border-bottom: none; }
+    .utility-chip {
+        font-size: 0.8rem;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: rgba(0, 122, 255, 0.1);
+        color: var(--accent-color);
+        font-weight: 600;
+    }
 </style>
 {% endblock %}
 
 {% block extra_script %}
-<script src="{% static 'core/js/daily_pick.js' %}?v=2"></script>
+<script src="{% static 'core/js/daily_pick.js' %}?v=3"></script>
 {% endblock %}

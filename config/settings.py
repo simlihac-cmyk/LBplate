@@ -119,6 +119,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'core.context_processors.analytics',
             ],
         },
     },
@@ -185,7 +186,10 @@ SITE_ID = 1
 WORD2VEC_MODEL_PATH = os.path.join(BASE_DIR, 'models', 'cc.ko.300.vec')
 WORD2VEC_LIMIT = 300000
 WP_REQUEST_TIMEOUT = int(os.getenv('WP_REQUEST_TIMEOUT', '5'))
+WP_CACHE_TIMEOUT = int(os.getenv('WP_CACHE_TIMEOUT', '300'))
+WP_SITEMAP_CACHE_TIMEOUT = int(os.getenv('WP_SITEMAP_CACHE_TIMEOUT', '3600'))
 WP_BASE_URL = os.getenv('WP_BASE_URL', 'http://127.0.0.1:4080/wp-json/wp/v2')
+GA4_MEASUREMENT_ID = os.getenv('GA4_MEASUREMENT_ID', '')
 MAX_2048_SCORE = int(os.getenv('MAX_2048_SCORE', '2000000'))
 MIN_REACTION_SCORE = int(os.getenv('MIN_REACTION_SCORE', '50'))
 MAX_REACTION_SCORE = int(os.getenv('MAX_REACTION_SCORE', '3000'))

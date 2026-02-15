@@ -100,6 +100,14 @@ document.addEventListener('DOMContentLoaded', () => {
         btnGenerate.disabled = true;
         btnConfirm.disabled = true; // 게임 중 설정 변경 방지
 
+        if (window.trackEvent) {
+            window.trackEvent('utility_use', {
+                event_category: 'utility',
+                event_label: 'ladder_start',
+                players: game.players,
+            });
+        }
+
         // 결과 뱃지 초기화
         document.querySelectorAll('.result-badge').forEach(b => {
             b.classList.remove('show');
@@ -263,6 +271,14 @@ document.addEventListener('DOMContentLoaded', () => {
         badge.innerText = pName;
         badge.style.backgroundColor = color;
         badge.classList.add('show');
+
+        if (window.trackEvent) {
+            window.trackEvent('utility_result', {
+                event_category: 'utility',
+                event_label: 'ladder_result',
+                result_column: resultColIdx + 1,
+            });
+        }
         
         // 모든 참가자 도착 시 리셋 버튼 활성화 로직 등 추가 가능
         // 현재는 단순 일회성

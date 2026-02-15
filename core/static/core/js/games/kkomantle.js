@@ -86,6 +86,14 @@ function addGuess(word, score, rank, isCorrect) {
 
         successArea.style.display = 'block';
         document.getElementById('finalCount').innerText = guesses.length;
+
+        if (window.trackEvent) {
+            window.trackEvent('game_finish', {
+                event_category: 'games',
+                event_label: 'kkomantle',
+                attempts: guesses.length,
+            });
+        }
     }
 
     guesses.sort((a, b) => b.score - a.score);
@@ -158,6 +166,12 @@ async function shareResult() {
     try {
         await navigator.clipboard.writeText(text);
         setStatus('결과가 복사되었습니다.');
+        if (window.trackEvent) {
+            window.trackEvent('share_result', {
+                event_category: 'games',
+                event_label: 'kkomantle',
+            });
+        }
     } catch (err) {
         console.error(err);
         setStatus('복사에 실패했습니다. 수동으로 복사해 주세요.', true);
