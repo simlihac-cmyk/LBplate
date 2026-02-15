@@ -6,6 +6,7 @@ let timeoutId;
 let currentRound = 1;
 const maxRounds = 3;
 let roundScores = []; 
+let currentRankPeriod = 'daily';
 
 const area = document.getElementById('click-area');
 const icon = document.getElementById('status-icon');
@@ -14,7 +15,8 @@ const subText = document.getElementById('sub-text');
 const attemptEl = document.getElementById('current-attempt');
 
 document.addEventListener('DOMContentLoaded', () => {
-    loadRanking();
+    bindRankPeriodToggle();
+    loadRanking(currentRankPeriod);
     
     if (area) {
         area.addEventListener('mousedown', handleClick);
@@ -27,6 +29,42 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeModalBtn = document.getElementById('close-modal-btn');
     if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
 });
+
+function bindRankPeriodToggle() {
+    const periodButtons = document.querySelectorAll('#rank-period-toggle .period-btn');
+    if (!periodButtons.length) return;
+
+    periodButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            const selectedPeriod = button.dataset.period;
+            if (!selectedPeriod || selectedPeriod === currentRankPeriod) return;
+
+            currentRankPeriod = selectedPeriod;
+            updateRankPeriodUI();
+            loadRanking(currentRankPeriod);
+
+            if (window.trackEvent) {
+                window.trackEvent('rank_period_change', {
+                    event_category: 'games',
+                    event_label: 'reaction',
+                    period: currentRankPeriod,
+                });
+            }
+        });
+    });
+}
+
+function updateRankPeriodUI() {
+    const title = document.getElementById('rank-title');
+    if (title) {
+        title.textContent = currentRankPeriod === 'weekly' ? "⚡ Weekly Top 10" : "⚡ Today's Top 10";
+    }
+
+    const periodButtons = document.querySelectorAll('#rank-period-toggle .period-btn');
+    periodButtons.forEach((button) => {
+        button.classList.toggle('active', button.dataset.period === currentRankPeriod);
+    });
+}
 
 function handleClick() {
     if (state === 'waiting') {
@@ -155,7 +193,7 @@ function submitScore() {
                     score: finalAverage,
                 });
             }
-            loadRanking();
+            loadRanking(currentRankPeriod);
             closeModal();
         } else {
             alert("오류: " + data.message);
@@ -163,16 +201,23 @@ function submitScore() {
     });
 }
 
-function loadRanking() {
+function loadRanking(period = 'daily') {
+    currentRankPeriod = period === 'weekly' ? 'weekly' : 'daily';
+    updateRankPeriodUI();
+
     if (!window.gameConfig) return;
 
-    fetch(window.gameConfig.apiEndpoint)
+    const rankUrl = `${window.gameConfig.apiEndpoint}?period=${encodeURIComponent(currentRankPeriod)}`;
+    fetch(rankUrl)
     .then(res => res.json())
     .then(data => {
         const list = document.getElementById('rank-list');
         list.innerHTML = '';
         if(data.ranking.length === 0) {
-            list.innerHTML = '<li style="justify-content:center; color:#999;">기록이 없습니다.</li>';
+            const emptyText = currentRankPeriod === 'weekly'
+                ? '이번 주 기록이 없습니다.'
+                : '오늘 기록이 없습니다.';
+            list.innerHTML = `<li style="justify-content:center; color:#999;">${emptyText}</li>`;
             return;
         }
         data.ranking.forEach((r, idx) => {

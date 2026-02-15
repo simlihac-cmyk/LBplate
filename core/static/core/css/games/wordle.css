@@ -21,6 +21,37 @@
 .rank-area { flex: 1; min-width: 300px; max-height: 500px; overflow-y: auto; }
 .rank-desc { font-size: 0.8rem; color: #86868b; margin-bottom: 10px; }
 
+.rank-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.rank-period-toggle {
+    display: inline-flex;
+    padding: 2px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.06);
+}
+
+.period-btn {
+    border: none;
+    background: transparent;
+    color: #666;
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.period-btn.active {
+    background: white;
+    color: #1d1d1f;
+}
+
 /* 보드 스타일 */
 .wordle-board {
     display: grid;

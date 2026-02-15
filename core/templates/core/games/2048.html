@@ -28,7 +28,13 @@
     </div>
 
     <div class="rank-area card">
-        <h3 class="card-title">🏆 Today's Top 10</h3>
+        <div class="rank-header">
+            <h3 class="card-title" id="rank-title">🏆 Today&apos;s Top 10</h3>
+            <div class="rank-period-toggle" id="rank-period-toggle">
+                <button type="button" class="period-btn active" data-period="daily">일간</button>
+                <button type="button" class="period-btn" data-period="weekly">주간</button>
+            </div>
+        </div>
         <ul id="rank-list" class="rank-list">
             <li>Loading...</li>
         </ul>
@@ -55,5 +61,5 @@
         csrfToken: "{{ csrf_token }}"
     };
 </script>
-<script src="{% static 'core/js/games/2048.js' %}?v=2"></script>
+<script src="{% static 'core/js/games/2048.js' %}?v=3"></script>
 {% endblock %}

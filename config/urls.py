@@ -6,7 +6,8 @@ from core.sitemaps import StaticViewSitemap, WordPressPostSitemap
 from core.views import (
     home, blog_home, roulette, post_detail, ladder, utility_home,
     game_2048, api_2048_rank, games_lobby,
-    game_reaction, api_reaction_rank, game_wordle, api_wordle_rank, game_kkomantle, api_kkomantle_guess,
+    game_reaction, api_reaction_rank, game_wordle, api_wordle_rank, game_kkomantle,
+    api_kkomantle_guess, api_kkomantle_hint, api_kkomantle_surrender,
     policy_privacy, policy_terms, policy_disclosure, contact,
 )
 
@@ -42,6 +43,8 @@ urlpatterns = [
     path('api/rank/wordle/', api_wordle_rank, name='api_wordle_rank'),
     path('games/kkomantle/', game_kkomantle, name='game_kkomantle'),
     path('api/guess/kkomantle/', api_kkomantle_guess, name='api_kkomantle_guess'),
+    path('api/hint/kkomantle/', api_kkomantle_hint, name='api_kkomantle_hint'),
+    path('api/surrender/kkomantle/', api_kkomantle_surrender, name='api_kkomantle_surrender'),
     path('policy/privacy/', policy_privacy, name='policy_privacy'),
     path('policy/terms/', policy_terms, name='policy_terms'),
     path('policy/disclosure/', policy_disclosure, name='policy_disclosure'),

@@ -5,95 +5,75 @@
 {% block meta_description %}미니게임, 유틸리티 도구, 블로그 업데이트를 한 곳에서 즐겨보세요.{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="card col-2 row-2" id="blog">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-            <span class="card-label">Recent Updates</span>
-            <a href="{% url 'blog_home' %}" data-track-event="blog_view_all_click" data-track-category="blog" data-track-label="home_blog_view_all" style="font-size: 0.75rem; color: var(--accent-color); text-decoration: none; font-weight: 700;">View All →</a>
+<div class="home-layout">
+    <div class="home-main-column">
+        <div class="card" id="blog">
+            <div class="home-card-head">
+                <span class="card-label">Recent Updates</span>
+                <a href="{% url 'blog_home' %}" class="view-all-link" data-track-event="blog_view_all_click" data-track-category="blog" data-track-label="home_blog_view_all">View All →</a>
+            </div>
+            <div class="blog-list">
+                {% if posts %}
+                    {% for post in posts|slice:":3" %}
+                    <a href="{% url 'post_detail' post.id %}" class="blog-link" data-track-event="blog_post_click" data-track-category="blog" data-track-label="home_post_{{ post.id }}">
+                        <div class="blog-item">
+                            <h4>{{ post.title.rendered }}</h4>
+                            <p>{{ post.excerpt.rendered|striptags|truncatechars:60 }}</p>
+                        </div>
+                    </a>
+                    {% endfor %}
+                {% else %}
+                    <p style="color:var(--text-dim)">작성된 포스트가 없습니다.</p>
+                {% endif %}
+            </div>
         </div>
-        <div class="blog-list">
-            {% if posts %}
-                {% for post in posts|slice:":3" %}
-                <a href="{% url 'post_detail' post.id %}" class="blog-link" data-track-event="blog_post_click" data-track-category="blog" data-track-label="home_post_{{ post.id }}">
-                    <div class="blog-item">
-                        <h4>{{ post.title.rendered }}</h4>
-                        <p>{{ post.excerpt.rendered|striptags|truncatechars:60 }}</p>
-                    </div>
-                </a>
-                {% endfor %}
-            {% else %}
-                <p style="color:var(--text-dim)">작성된 포스트가 없습니다.</p>
-            {% endif %}
+
+        <div class="card interactive-card" id="fortuneCard">
+            <span class="card-label">Daily Pick</span>
+            <h3 class="card-title" id="fortune-title">오늘의 문구</h3>
+            <p id="fortune-display" class="card-desc fortune-text">
+                클릭하여 확인
+            </p>
+            <div class="util-icon">✨</div>
         </div>
     </div>
 
-    <div class="card" id="fortuneCard" style="cursor: pointer;">
-        <span class="card-label">Daily Pick</span>
-        <h3 class="card-title" id="fortune-title">오늘의 문구</h3>
-        <p id="fortune-display" style="transition: opacity 0.3s ease; font-size: 0.9rem; color: var(--text-dim); margin-top: 10px;">
-            클릭하여 확인
-        </p>
-        <div class="util-icon">✨</div>
-    </div>
+    <div class="home-side-column">
+        <a href="{% url 'utility_home' %}" class="card" id="utility" data-track-event="utility_hub_click" data-track-category="utility" data-track-label="home_utility_hub">
+            <span class="card-label">Utility</span>
+            <div class="card-title">도구 모음</div>
+            <p class="card-desc">
+                돌림판과 사다리타기를 한 곳에서 실행
+            </p>
+            <div class="chip-row">
+                <span class="utility-chip">돌림판</span>
+                <span class="utility-chip">사다리타기</span>
+            </div>
+            <div class="util-icon">🧰</div>
+        </a>
 
-    <a href="{% url 'utility_home' %}" class="card col-2" id="utility" data-track-event="utility_hub_click" data-track-category="utility" data-track-label="home_utility_hub">
-        <span class="card-label">Utility</span>
-        <div class="card-title">도구 모음</div>
-        <p style="font-size: 0.85rem; color: var(--text-dim); margin-top: 8px;">
-            돌림판과 사다리타기를 한 곳에서 실행
-        </p>
-        <div style="display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap;">
-            <span class="utility-chip">돌림판</span>
-            <span class="utility-chip">사다리타기</span>
+        <a href="{% url 'games_lobby' %}" class="card" id="games" data-track-event="games_lobby_click" data-track-category="games" data-track-label="home_games_lobby">
+            <span class="card-label">Games</span>
+            <div class="card-title">미니게임</div>
+            <div class="game-list">
+                <span>워들</span>
+                <span>꼬멘틀</span>
+                <span>2048</span>
+                <span>반응속도</span>
+            </div>
+            <div class="util-icon">🎮</div>
+        </a>
+
+        <div class="card">
+            <span class="card-label">Monetization</span>
+            <div class="card-title">제휴/광고 준비 중</div>
+            <p class="card-desc">
+                정책 페이지와 측정 환경을 정비하고 있어요.
+            </p>
+            <div class="util-icon">➕</div>
         </div>
-        <div class="util-icon" style="font-size: 1.4rem; position: absolute; bottom: 20px; right: 20px;">🧰</div>
-    </a>
-
-    <a href="{% url 'games_lobby' %}" class="card col-2" id="games" data-track-event="games_lobby_click" data-track-category="games" data-track-label="home_games_lobby">
-        <span class="card-label">Entertainment</span>
-        <div class="card-title">Mini Games</div>
-        <div style="display: flex; gap: 15px; margin-top: 15px; font-size: 0.9rem; color: var(--accent-color); font-weight: 600;">
-            <span>Wordle</span>
-            <span style="color: var(--text-dim)">•</span>
-            <span>2048</span>
-            <span style="color: var(--text-dim)">•</span>
-            <span>Reaction</span>
-        </div>
-        <div class="util-icon" style="font-size: 1.5rem; position: absolute; bottom: 20px; right: 20px;">🎮</div>
-    </a>
-
-    <div class="card">
-        <span class="card-label">Monetization</span>
-        <div class="card-title">제휴/광고 준비 중</div>
-        <p style="font-size: 0.85rem; color: var(--text-dim); margin-top: 8px;">
-            정책 페이지와 측정 환경을 정비하고 있어요.
-        </p>
-        <div class="util-icon">➕</div>
     </div>
 </div>
-
-<style>
-    /* (추가) 링크형 카드가 일반 카드와 똑같이 보이도록 설정 */
-    .container > a.card {
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        text-decoration: none;
-        color: inherit;
-    }
-    
-    .blog-link { text-decoration: none; color: inherit; display: block; }
-    .blog-item { border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 10px; margin-bottom: 10px; }
-    .blog-item:last-child { border-bottom: none; }
-    .utility-chip {
-        font-size: 0.8rem;
-        padding: 4px 10px;
-        border-radius: 999px;
-        background: rgba(0, 122, 255, 0.1);
-        color: var(--accent-color);
-        font-weight: 600;
-    }
-</style>
 {% endblock %}
 
 {% block extra_script %}

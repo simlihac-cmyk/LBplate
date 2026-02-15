@@ -157,12 +157,175 @@ main {
     color: #000;
 }
 
+/* Home Layout */
+.home-layout {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px 50px;
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: 20px;
+    align-items: start;
+}
+
+.home-main-column,
+.home-side-column {
+    display: grid;
+    gap: 20px;
+}
+
+.home-card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.view-all-link {
+    font-size: 0.75rem;
+    color: var(--accent-color);
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.view-all-link:hover {
+    text-decoration: underline;
+}
+
+.interactive-card {
+    cursor: pointer;
+}
+
+.home-layout a.card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    text-decoration: none;
+    color: inherit;
+}
+
+.home-side-column .card {
+    min-height: 170px;
+}
+
+.home-main-column #blog {
+    min-height: 360px;
+}
+
+.home-main-column #fortuneCard {
+    min-height: 170px;
+}
+
+.home-layout .card-desc {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    margin-top: 8px;
+}
+
+.home-layout .fortune-text {
+    font-size: 0.9rem;
+    transition: opacity 0.3s ease;
+}
+
+.home-layout .blog-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.home-layout .blog-item {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    padding: 2px 0 10px;
+    margin-bottom: 10px;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.home-layout .blog-link:hover .blog-item {
+    transform: translateX(2px);
+    opacity: 0.9;
+}
+
+.home-layout .blog-item:last-child {
+    border-bottom: none;
+}
+
+.home-layout .blog-item h4 {
+    line-height: 1.35;
+    margin-bottom: 4px;
+}
+
+.home-layout .blog-item p {
+    color: var(--text-dim);
+    font-size: 0.88rem;
+}
+
+.home-layout .chip-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+}
+
+.home-layout .utility-chip {
+    font-size: 0.8rem;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(0, 122, 255, 0.1);
+    color: var(--accent-color);
+    font-weight: 600;
+}
+
+.home-layout .game-list {
+    margin-top: 14px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+    color: var(--accent-color);
+    font-size: 0.88rem;
+    font-weight: 600;
+}
+
+.home-layout .game-list span::after {
+    content: '•';
+    margin-left: 8px;
+    color: var(--text-dim);
+    font-weight: 400;
+}
+
+.home-layout .game-list span:last-child::after {
+    content: '';
+    margin: 0;
+}
+
+#fortuneCard {
+    background: linear-gradient(130deg, rgba(255, 255, 255, 0.92), rgba(255, 248, 229, 0.88));
+}
+
+#utility,
+#games {
+    background: linear-gradient(130deg, rgba(255, 255, 255, 0.88), rgba(245, 250, 255, 0.9));
+}
+
+.home-layout .util-icon {
+    font-size: 1.4rem;
+    position: absolute;
+    right: 20px;
+    bottom: 20px;
+    opacity: 0.92;
+}
+
 /* 📱 Responsive Design */
 
 /* 태블릿 (1024px 이하) */
 @media (max-width: 1024px) {
     .container {
         grid-template-columns: repeat(2, 1fr);
+    }
+
+    .home-layout {
+        grid-template-columns: 1fr;
+        gap: 16px;
     }
 }
 

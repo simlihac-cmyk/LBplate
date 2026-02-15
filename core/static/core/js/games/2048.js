@@ -3,10 +3,12 @@ const boardSize = 4;
 let grid = [];
 let score = 0;
 let startX, startY; // 터치 좌표 저장용
+let currentRankPeriod = 'daily';
 
 document.addEventListener('DOMContentLoaded', () => {
     initGame();
-    loadRanking();
+    bindRankPeriodToggle();
+    loadRanking(currentRankPeriod);
     
     // 키보드 이벤트
     document.addEventListener('keydown', handleInput);
@@ -27,6 +29,42 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeModalBtn = document.getElementById('close-modal-btn');
     if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
 });
+
+function bindRankPeriodToggle() {
+    const periodButtons = document.querySelectorAll('#rank-period-toggle .period-btn');
+    if (!periodButtons.length) return;
+
+    periodButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            const selectedPeriod = button.dataset.period;
+            if (!selectedPeriod || selectedPeriod === currentRankPeriod) return;
+
+            currentRankPeriod = selectedPeriod;
+            updateRankPeriodUI();
+            loadRanking(currentRankPeriod);
+
+            if (window.trackEvent) {
+                window.trackEvent('rank_period_change', {
+                    event_category: 'games',
+                    event_label: '2048',
+                    period: currentRankPeriod,
+                });
+            }
+        });
+    });
+}
+
+function updateRankPeriodUI() {
+    const title = document.getElementById('rank-title');
+    if (title) {
+        title.textContent = currentRankPeriod === 'weekly' ? "🏆 Weekly Top 10" : "🏆 Today's Top 10";
+    }
+
+    const periodButtons = document.querySelectorAll('#rank-period-toggle .period-btn');
+    periodButtons.forEach((button) => {
+        button.classList.toggle('active', button.dataset.period === currentRankPeriod);
+    });
+}
 
 // === 2. 게임 시작 및 그리기 ===
 function initGame() {
@@ -229,7 +267,7 @@ function submitScore() {
                     score: score,
                 });
             }
-            loadRanking();
+            loadRanking(currentRankPeriod);
             closeModal();
         } else {
             alert("오류: " + data.message);
@@ -238,13 +276,17 @@ function submitScore() {
     .catch(err => alert("서버 통신 오류"));
 }
 
-function loadRanking() {
+function loadRanking(period = 'daily') {
+    currentRankPeriod = period === 'weekly' ? 'weekly' : 'daily';
+    updateRankPeriodUI();
+
     const bestEl = document.getElementById('best-score');
     if(bestEl) bestEl.innerText = localStorage.getItem('2048-best') || 0;
 
     if (!window.gameConfig) return;
 
-    fetch(window.gameConfig.apiEndpoint)
+    const rankUrl = `${window.gameConfig.apiEndpoint}?period=${encodeURIComponent(currentRankPeriod)}`;
+    fetch(rankUrl)
     .then(res => res.json())
     .then(data => {
         const list = document.getElementById('rank-list');
@@ -252,7 +294,10 @@ function loadRanking() {
         
         list.innerHTML = '';
         if(data.ranking.length === 0) {
-            list.innerHTML = '<li style="justify-content:center; color:#999;">오늘의 첫 도전자가 되어보세요!</li>';
+            const emptyText = currentRankPeriod === 'weekly'
+                ? '이번 주 첫 도전자가 되어보세요!'
+                : '오늘의 첫 도전자가 되어보세요!';
+            list.innerHTML = `<li style="justify-content:center; color:#999;">${emptyText}</li>`;
             return;
         }
         data.ranking.forEach((r, idx) => {

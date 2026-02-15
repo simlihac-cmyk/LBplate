@@ -23,6 +23,19 @@
 .input-group button { padding: 0 25px; background: #4A90E2; color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 1rem; transition: background 0.3s; }
 .input-group button:hover { background: #357ABD; }
 .input-group button:disabled { background: #ccc; cursor: not-allowed; }
+.action-row { display: flex; gap: 10px; margin-top: 12px; }
+.secondary-btn { flex: 1; padding: 11px 14px; border-radius: 12px; border: 1px solid #d3d9e0; background: #f7f9fc; color: #2f3b4a; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+.secondary-btn:hover { background: #edf2f8; }
+.secondary-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.danger-btn { border-color: #f5c2c7; color: #9f1d2d; background: #fff5f6; }
+.danger-btn:hover { background: #ffeef0; }
+.hint-area, .related-area { display: none; margin-top: 14px; padding: 14px 16px; border-radius: 12px; background: #f8f9fb; border: 1px solid #eceff4; }
+.hint-area h3, .related-area h3 { margin: 0 0 8px; font-size: 0.95rem; color: #455468; }
+.hint-area ul, .related-area ul { margin: 0; padding-left: 18px; color: #374151; }
+.hint-area li, .related-area li { margin-bottom: 5px; }
+.guess-summary { display: flex; gap: 8px; margin-top: 18px; flex-wrap: wrap; }
+.summary-pill { border: 1px solid #e3e7ee; background: #f9fbff; color: #3c4a5e; border-radius: 999px; padding: 7px 12px; font-size: 0.88rem; }
+.summary-pill strong { margin-left: 4px; color: #1f2937; }
 
 /* 리스트 스타일 */
 .table-header { display: flex; justify-content: space-between; padding: 15px 20px; color: #888; font-size: 0.9rem; font-weight: bold; border-bottom: 2px solid #f0f0f0; margin-top: 20px; }
@@ -30,19 +43,25 @@
 .table-score-col { width: 140px; text-align: right; }
 .guess-list { list-style: none; padding: 0; margin: 0; padding-bottom: 100px; }
 
-.guess-item { display: flex; align-items: center; padding: 15px 20px; background: white; margin-bottom: 8px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); animation: slideIn 0.3s ease; border-left: 6px solid #ccc; }
+.guess-item { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; padding: 15px 20px; background: white; margin-bottom: 8px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); animation: slideIn 0.3s ease; border-left: 6px solid #ccc; }
+.guess-empty { padding: 16px 20px; color: #7a8698; text-align: center; background: #f7f9fc; border: 1px dashed #d8dee8; border-radius: 12px; }
+.latest-guess { box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2), 0 2px 6px rgba(0,0,0,0.05); }
 
 /* 온도 색상 (Hot -> Cold) */
 .rank-hot { border-left-color: #FF3B30; background-color: #FFF5F5; } /* 1~1000위 */
 .rank-cold { border-left-color: #8E8E93; } /* 1000위 밖 */
 .rank-correct { border-left-color: #34C759; background-color: #F2FBF5; border: 2px solid #34C759; } /* 정답 */
 
-.word-col { flex: 1; font-weight: bold; font-size: 1.1rem; }
+.guess-main { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.word-col { flex: 1; font-weight: bold; font-size: 1.1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.latest-chip { font-size: 0.72rem; font-weight: 700; color: #1f5aa5; background: #e9f2ff; border: 1px solid #c9defd; border-radius: 999px; padding: 3px 8px; white-space: nowrap; }
+.meta-col { color: #7a8598; font-size: 0.82rem; white-space: nowrap; }
+.stats-col { display: flex; align-items: center; }
 .score-col { width: 80px; text-align: right; font-weight: bold; }
 .rank-col { width: 80px; text-align: right; color: #666; font-size: 0.9rem; }
 
 /* 진행바 (유사도 시각화) */
-.progress-bg { height: 6px; width: 60px; background: #eee; border-radius: 3px; margin-right: 15px; overflow: hidden; }
+.progress-bg { height: 6px; width: 70px; background: #eee; border-radius: 3px; margin-right: 12px; overflow: hidden; }
 .progress-fill { height: 100%; background: #ccc; width: 0%; transition: width 0.5s; }
 .rank-hot .progress-fill { background: #FF3B30; }
 .rank-correct .progress-fill { background: #34C759; }
@@ -50,8 +69,16 @@
 /* 성공 모달 (공유하기 버튼) */
 .success-modal { display: none; text-align: center; margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 15px; border: 1px solid #ddd; animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
 .success-modal h2 { margin: 0 0 10px 0; color: #333; }
+.answer-line { margin: 8px 0 12px; font-weight: 700; color: #1f2937; }
 .share-btn { background: #34C759; color: white; border: none; padding: 12px 24px; border-radius: 25px; font-size: 1rem; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: transform 0.2s; }
 .share-btn:hover { background: #248a3d; transform: scale(1.05); }
+
+@media (max-width: 700px) {
+    .guess-item { grid-template-columns: 1fr; gap: 6px; }
+    .meta-col { font-size: 0.78rem; }
+    .stats-col { justify-content: flex-end; }
+    .table-score-col { width: 120px; }
+}
 
 @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes popIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }

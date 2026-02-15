@@ -5,23 +5,28 @@
 
 {% block content %}
 <div class="policy-wrapper">
-    <h1>개인정보처리방침</h1>
-    <p>최종 업데이트: 2026-02-15</p>
+    <h1>개인정보처리방침 <span class="policy-subtitle">Privacy Policy</span></h1>
+    <p class="policy-date">최종 업데이트: 2026-02-15 | Last Updated: 2026-02-15</p>
 
-    <h2>1. 수집 항목</h2>
+    <h2>1. 수집 항목 / Data Collected</h2>
     <p>서비스 이용 과정에서 닉네임, 접속 로그, 기기 정보, 쿠키 정보가 수집될 수 있습니다.</p>
+    <p class="policy-en">During service use, we may collect nickname, access logs, device information, and cookie data.</p>
 
-    <h2>2. 이용 목적</h2>
+    <h2>2. 이용 목적 / Purpose of Use</h2>
     <p>서비스 제공, 부정 이용 방지, 품질 개선, 방문 통계 분석을 위해 이용합니다.</p>
+    <p class="policy-en">Collected data is used to provide services, prevent abuse, improve quality, and analyze site traffic.</p>
 
-    <h2>3. 보관 및 파기</h2>
+    <h2>3. 보관 및 파기 / Retention and Deletion</h2>
     <p>관련 법령 또는 내부 정책에 따라 필요한 기간 동안 보관 후 지체 없이 파기합니다.</p>
+    <p class="policy-en">We retain personal data only as long as required by law or internal policy, and delete it without undue delay.</p>
 
-    <h2>4. 제3자 제공</h2>
+    <h2>4. 제3자 제공 / Third-Party Sharing</h2>
     <p>원칙적으로 이용자 동의 없이 개인정보를 외부에 제공하지 않습니다. 법령에 따른 경우는 예외로 합니다.</p>
+    <p class="policy-en">In principle, we do not share personal data with third parties without user consent, except where required by law.</p>
 
-    <h2>5. 이용자 권리</h2>
+    <h2>5. 이용자 권리 / User Rights</h2>
     <p>개인정보 열람, 정정, 삭제 요청은 문의 페이지를 통해 접수할 수 있습니다.</p>
+    <p class="policy-en">Requests for access, correction, or deletion of personal data can be submitted via the Contact page.</p>
  </div>
 
 <style>
@@ -33,6 +38,16 @@
     .policy-wrapper h1 {
         margin-bottom: 8px;
     }
+    .policy-subtitle {
+        display: block;
+        margin-top: 4px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--text-dim);
+    }
+    .policy-date {
+        margin-bottom: 10px;
+    }
     .policy-wrapper h2 {
         margin-top: 22px;
         margin-bottom: 8px;
@@ -41,6 +56,11 @@
     .policy-wrapper p {
         color: var(--text-dim);
         line-height: 1.8;
+    }
+    .policy-en {
+        margin-top: 6px;
+        font-size: 0.94rem;
+        color: #5f6b7a;
     }
 </style>
 {% endblock %}

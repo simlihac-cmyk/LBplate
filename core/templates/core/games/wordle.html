@@ -16,7 +16,13 @@
     </div>
 
     <div class="rank-area card">
-        <h3 class="card-title">🔤 Today's Top 10</h3>
+        <div class="rank-header">
+            <h3 class="card-title" id="rank-title">🔤 Today&apos;s Top 10</h3>
+            <div class="rank-period-toggle" id="rank-period-toggle">
+                <button type="button" class="period-btn active" data-period="daily">일간</button>
+                <button type="button" class="period-btn" data-period="weekly">주간</button>
+            </div>
+        </div>
         <p class="rank-desc">적은 시도 횟수가 1등입니다.</p>
         <ul id="rank-list" class="rank-list">
             <li>Loading...</li>
@@ -47,5 +53,5 @@
         csrfToken: "{{ csrf_token }}"
     };
 </script>
-<script src="{% static 'core/js/games/wordle.js' %}?v=4"></script>
+<script src="{% static 'core/js/games/wordle.js' %}?v=5"></script>
 {% endblock %}

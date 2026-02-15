@@ -1,9 +1,11 @@
 import json
+import datetime
 import requests
 from unittest.mock import patch
 from django.core.cache import cache
 from django.test import TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
 from .models import GameRecord
 
 
@@ -124,3 +126,42 @@ class CoreViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, '/utility/')
         self.assertContains(response, '/post/42/')
+
+    def test_api_2048_rank_weekly_filters_last_7_days(self):
+        in_week = GameRecord.objects.create(game_type='2048', player_name='weekuser', score=2048)
+        out_week = GameRecord.objects.create(game_type='2048', player_name='olduser', score=4096)
+
+        GameRecord.objects.filter(pk=in_week.pk).update(
+            created_at=timezone.now() - datetime.timedelta(days=2)
+        )
+        GameRecord.objects.filter(pk=out_week.pk).update(
+            created_at=timezone.now() - datetime.timedelta(days=9)
+        )
+
+        response = self.client.get(reverse('api_2048_rank') + '?period=weekly')
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload['period'], 'weekly')
+        names = [item['name'] for item in payload['ranking']]
+        self.assertIn('weekuser', names)
+        self.assertNotIn('olduser', names)
+
+    def test_api_reaction_rank_weekly_keeps_ascending_order(self):
+        high = GameRecord.objects.create(game_type='reaction', player_name='slowpoke', score=420)
+        low = GameRecord.objects.create(game_type='reaction', player_name='quick', score=180)
+
+        GameRecord.objects.filter(pk=high.pk).update(
+            created_at=timezone.now() - datetime.timedelta(days=3)
+        )
+        GameRecord.objects.filter(pk=low.pk).update(
+            created_at=timezone.now() - datetime.timedelta(days=1)
+        )
+
+        response = self.client.get(reverse('api_reaction_rank') + '?period=weekly')
+        payload = response.json()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(payload['period'], 'weekly')
+        self.assertGreaterEqual(len(payload['ranking']), 2)
+        self.assertEqual(payload['ranking'][0]['name'], 'quick')

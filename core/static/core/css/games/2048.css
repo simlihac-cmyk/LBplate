@@ -22,6 +22,37 @@
     overflow-y: auto;
 }
 
+.rank-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.rank-period-toggle {
+    display: inline-flex;
+    padding: 2px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.06);
+}
+
+.period-btn {
+    border: none;
+    background: transparent;
+    color: #666;
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.period-btn.active {
+    background: white;
+    color: #1d1d1f;
+}
+
 /* 게임 보드 */
 .game-board {
     width: 100%;

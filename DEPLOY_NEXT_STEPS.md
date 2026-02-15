@@ -136,3 +136,4 @@ Validation:
 - Move production DB from SQLite to PostgreSQL
 - Add monitoring/alerts (Sentry + webhook)
 - Add backup/restore script and weekly restore drill
+- Conversion 운영은 `GA4_CONVERSION_PLAYBOOK.md`를 기준으로 점검

@@ -16,8 +16,9 @@
     </div>
 
     <div id="successArea" class="success-modal" aria-live="polite">
-        <h2>🎉 정답입니다!</h2>
-        <p><span id="finalCount">0</span>번 만에 맞추셨네요!</p>
+        <h2 id="successTitle">🎉 정답입니다!</h2>
+        <p id="successMessage">0번 만에 맞추셨네요!</p>
+        <p id="answerLine" class="answer-line"></p>
         <button id="shareBtn" type="button" class="share-btn">
             📤 결과 복사하기
         </button>
@@ -28,9 +29,29 @@
         <input type="text" id="wordInput" placeholder="단어를 입력하세요" autocomplete="off" required>
         <button id="submitBtn" type="submit">추측하기</button>
     </form>
+    <div class="action-row">
+        <button id="hintBtn" type="button" class="secondary-btn">힌트 보기 (0/3)</button>
+        <button id="surrenderBtn" type="button" class="secondary-btn danger-btn">포기하기</button>
+    </div>
+
+    <div id="hintArea" class="hint-area" aria-live="polite">
+        <h3>사용한 힌트</h3>
+        <ul id="hintList"></ul>
+    </div>
+
+    <div id="relatedArea" class="related-area" aria-live="polite">
+        <h3>정답과 가까운 단어</h3>
+        <ul id="relatedList"></ul>
+    </div>
+
+    <div id="guessSummary" class="guess-summary" aria-live="polite">
+        <div class="summary-pill">총 시도 <strong id="summaryCount">0</strong></div>
+        <div class="summary-pill">최고 유사도 <strong id="summaryBestScore">-</strong></div>
+        <div class="summary-pill">Top 1000 <strong id="summaryHotCount">0</strong></div>
+    </div>
 
     <div class="table-header">
-        <span class="table-word-col">단어</span>
+        <span class="table-word-col">입력 단어</span>
         <span class="table-score-col">유사도 / 순위</span>
     </div>
 
@@ -42,9 +63,11 @@
 <script>
     const GAME_CONFIG = {
         apiUrl: "{% url 'api_kkomantle_guess' %}",
+        hintApiUrl: "{% url 'api_kkomantle_hint' %}",
+        surrenderApiUrl: "{% url 'api_kkomantle_surrender' %}",
         csrfToken: "{{ csrf_token }}"
     };
 </script>
 
-<script src="{% static 'core/js/games/kkomantle.js' %}?v=2"></script>
+<script src="{% static 'core/js/games/kkomantle.js' %}?v=4"></script>
 {% endblock %}

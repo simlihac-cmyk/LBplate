@@ -26,6 +26,119 @@ LIMIT = getattr(settings, 'WORD2VEC_LIMIT', 300000)
 model = None
 CANDIDATES = [] # 정답 후보 단어 리스트
 
+KOREAN_WORD_PATTERN = re.compile(r'^[가-힣]{2,}$')
+# 형태소 분석기 없이 조사 결합형을 줄이기 위한 보수적 휴리스틱
+MULTI_CHAR_JOSA_SUFFIXES = (
+    '으로부터', '으로서', '으로써', '에게서', '이라도', '이라서', '인데도', '인데요',
+    '처럼', '까지', '부터', '보다', '한테', '에게', '에서', '으로', '라고', '이며',
+    '인데', '이나', '라도', '밖에', '조차', '마저'
+)
+
+# 단일 글자 조사 중 오검출 위험이 상대적으로 낮은 것만 사용
+SINGLE_CHAR_JOSA_SUFFIXES = (
+    '은', '는', '을', '를', '와', '과', '에', '로', '도', '만', '랑'
+)
+
+EXCLUDED_STANDALONE_FUNCTION_WORDS = set(MULTI_CHAR_JOSA_SUFFIXES) | {
+    '또는', '및', '또한',
+}
+
+NON_DICTIONARY_SUFFIXES = (
+    # 공손/문장 종결형
+    '습니까', '습니다', '니다', '입니다', '하세요', '세요', '네요', '군요', '아요', '어요', '해요',
+    # 활용/어미 결합형
+    '인가요', '라고요', '인데요', '지만', '니까', '면서', '거나', '도록', '려고',
+    # 서술 활용형 (기본형 명사/동사/형용사에서 제외)
+    '한다', '준다', '했다', '된다', '됐다', '였다', '있는', '없는',
+)
+
+NON_DICTIONARY_DA_SUFFIXES = (
+    '한다', '준다', '된다', '했다', '됐다', '였다', '갔다', '왔다', '봤다',
+)
+
+DA_EXCLUDE_JONGSUNG_INDEXES = {20}  # ㅆ
+DA_ALLOWLIST = {'있다', '없다'}
+
+
+def _get_jongsung_index(ch):
+    code = ord(ch) - 0xAC00
+    if code < 0 or code > 11171:
+        return 0
+    return code % 28
+
+
+def _looks_like_conjugated_da_form(word):
+    if not word.endswith('다') or len(word) < 2:
+        return False
+
+    if word in DA_ALLOWLIST:
+        return False
+
+    if word.endswith(NON_DICTIONARY_DA_SUFFIXES):
+        return True
+
+    prev = word[-2]
+    jongsung_idx = _get_jongsung_index(prev)
+    if jongsung_idx in DA_EXCLUDE_JONGSUNG_INDEXES:
+        return True
+
+    return False
+
+
+def _looks_like_josa_form(word, vocabulary):
+    for suffix in MULTI_CHAR_JOSA_SUFFIXES:
+        if not word.endswith(suffix):
+            continue
+        stem = word[:-len(suffix)]
+        # 예: 때부터 -> 때 + 부터
+        if len(stem) < 1:
+            continue
+        return True
+
+    for suffix in SINGLE_CHAR_JOSA_SUFFIXES:
+        if not word.endswith(suffix):
+            continue
+        stem = word[:-1]
+        # 한 글자 어근으로 인한 오검출(예: 마을/가을) 최소화
+        if len(stem) < 2:
+            continue
+        if stem in vocabulary:
+            return True
+
+    return False
+
+
+def _is_clean_korean_word(word, vocabulary):
+    if not KOREAN_WORD_PATTERN.fullmatch(word):
+        return False
+    if word in EXCLUDED_STANDALONE_FUNCTION_WORDS:
+        return False
+    if word.endswith(NON_DICTIONARY_SUFFIXES):
+        return False
+    if _looks_like_conjugated_da_form(word):
+        return False
+    if _looks_like_josa_form(word, vocabulary):
+        return False
+    return True
+
+
+def _build_related_words(secret_word, top_words, limit=10):
+    if not model:
+        return []
+
+    result = []
+    for index, word in enumerate(top_words[:limit], start=1):
+        try:
+            similarity = float(model.similarity(secret_word, word))
+        except Exception:
+            continue
+        result.append({
+            'word': word,
+            'rank': index,
+            'score': round(similarity * 100, 2),
+        })
+    return result
+
 
 def _wp_cache_key(endpoint, params):
     payload = json.dumps(
@@ -106,6 +219,24 @@ def is_rate_limited(request, scope, limit, window_seconds):
     cache.set(cache_key, entry, timeout=ttl)
     return False
 
+
+def resolve_rank_period(request):
+    period = (request.GET.get('period') or 'daily').strip().lower()
+    if period in ('daily', 'weekly'):
+        return period
+    return 'daily'
+
+
+def rank_date_filters(period):
+    today = timezone.localdate()
+    if period == 'weekly':
+        start_date = today - datetime.timedelta(days=6)
+        return {
+            'created_at__date__gte': start_date,
+            'created_at__date__lte': today,
+        }
+    return {'created_at__date': today}
+
 # ==========================================
 # 1. AI 모델 로딩 (서버 시작 시 1회 실행)
 # ==========================================
@@ -116,9 +247,10 @@ if MODEL_PATH and os.path.exists(MODEL_PATH):
         print("✅ 모델 로딩 완료!")
         
         # [오늘의 단어 후보군 만들기]
-        # 상위 3000개 중 2글자 이상, 한글로만 된 단어 필터링
-        raw_candidates = model.index_to_key[:3000]
-        CANDIDATES = [w for w in raw_candidates if len(w) >= 2 and w.replace('_', '').isalpha()]
+        # 상위 빈도 단어 중 "한글 단어 + 조사 결합형 제외" 조건으로 필터링
+        raw_candidates = model.index_to_key[:5000]
+        vocabulary = set(model.key_to_index)
+        CANDIDATES = [w for w in raw_candidates if _is_clean_korean_word(w, vocabulary)]
         
     except Exception as e:
         print(f"❌ 모델 로딩 실패: {e}")
@@ -153,27 +285,34 @@ def get_daily_word():
 TODAY_CACHE = {
     'date': None,
     'secret': None,
-    'top1000': []
+    'top_words': []
 }
 
-def get_top1000(secret_word):
-    """정답 단어의 유사도 순위표를 구하거나 캐시에서 가져옴"""
+def get_top_words(secret_word):
+    """정답 단어의 유사도 상위 단어 목록(최대 3000개)을 구하거나 캐시에서 가져옴"""
     today_str = datetime.date.today().isoformat()
     
     # 이미 구해놓은 게 오늘 거라면 그거 사용
     if TODAY_CACHE['date'] == today_str and TODAY_CACHE['secret'] == secret_word:
-        return TODAY_CACHE['top1000']
+        return TODAY_CACHE['top_words']
     
     # 아니면 새로 계산 (하루에 한 번만 실행됨)
     if model:
         try:
-            # most_similar는 (단어, 점수) 튜플 리스트를 줌
-            top_list = [w[0] for w in model.most_similar(secret_word, topn=3000)]
+            vocabulary = set(model.key_to_index)
+            raw_list = model.most_similar(secret_word, topn=6000)
+            top_list = []
+            for item in raw_list:
+                word = item[0]
+                if _is_clean_korean_word(word, vocabulary):
+                    top_list.append(word)
+                if len(top_list) >= 3000:
+                    break
             
             # 캐시 업데이트
             TODAY_CACHE['date'] = today_str
             TODAY_CACHE['secret'] = secret_word
-            TODAY_CACHE['top1000'] = top_list
+            TODAY_CACHE['top_words'] = top_list
             return top_list
         except:
             return []
@@ -243,7 +382,7 @@ def api_kkomantle_guess(request):
     
     try:
         # 순위표 준비
-        top_list = get_top1000(secret_word)
+        top_list = get_top_words(secret_word)
 
         # ★ 에러 수정 부분: float32 -> float 형변환 ★
         similarity = model.similarity(secret_word, guess)
@@ -264,14 +403,89 @@ def api_kkomantle_guess(request):
         if guess == secret_word:
             result_type = 'correct'
 
-        return JsonResponse({
+        payload = {
             'result': result_type,
             'score': score,
             'rank': rank
-        })
+        }
+        if result_type == 'correct':
+            payload['answer'] = secret_word
+            payload['similar_words'] = _build_related_words(secret_word, top_list, limit=12)
+
+        return JsonResponse(payload)
     except Exception as e:
         print(f"Error: {e}") # 터미널에 에러 로그 출력
         return JsonResponse({'result': 'error', 'message': '서버 오류가 발생했습니다.'}, status=500)
+
+
+def api_kkomantle_hint(request):
+    if request.method != 'POST':
+        return JsonResponse({'result': 'error'}, status=400)
+
+    post_limit = getattr(settings, 'KKOMANTLE_POST_RATE_LIMIT', 45)
+    post_window = getattr(settings, 'KKOMANTLE_POST_RATE_WINDOW', 60)
+    if is_rate_limited(request, 'kkomantle_hint', post_limit, post_window):
+        return JsonResponse(
+            {'result': 'error', 'message': '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.'},
+            status=429
+        )
+
+    if not model:
+        return JsonResponse({'result': 'error', 'message': 'AI 모델을 불러오지 못했습니다.'}, status=503)
+
+    try:
+        data = json.loads(request.body)
+        if not isinstance(data, dict):
+            return JsonResponse({'result': 'error', 'message': '잘못된 요청 형식입니다.'}, status=400)
+        step = int(data.get('step', 1))
+    except Exception:
+        return JsonResponse({'result': 'error', 'message': '잘못된 요청 형식입니다.'}, status=400)
+
+    hint_ranks = (1000, 500, 250)
+    if step < 1 or step > len(hint_ranks):
+        return JsonResponse({'result': 'fail', 'message': '더 이상 사용할 수 있는 힌트가 없어요.'}, status=400)
+
+    secret_word = get_daily_word()
+    top_list = get_top_words(secret_word)
+    target_rank = hint_ranks[step - 1]
+    idx = target_rank - 1
+
+    if idx >= len(top_list):
+        return JsonResponse(
+            {'result': 'fail', 'message': f'현재 모델에서는 {target_rank}위 힌트를 제공할 수 없습니다.'},
+            status=400
+        )
+
+    hint_word = top_list[idx]
+    similarity = round(float(model.similarity(secret_word, hint_word)) * 100, 2)
+    return JsonResponse({
+        'result': 'success',
+        'step': step,
+        'rank': target_rank,
+        'word': hint_word,
+        'score': similarity,
+    })
+
+
+def api_kkomantle_surrender(request):
+    if request.method != 'POST':
+        return JsonResponse({'result': 'error'}, status=400)
+
+    post_limit = getattr(settings, 'KKOMANTLE_POST_RATE_LIMIT', 45)
+    post_window = getattr(settings, 'KKOMANTLE_POST_RATE_WINDOW', 60)
+    if is_rate_limited(request, 'kkomantle_surrender', post_limit, post_window):
+        return JsonResponse(
+            {'result': 'error', 'message': '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.'},
+            status=429
+        )
+
+    secret_word = get_daily_word()
+    top_list = get_top_words(secret_word)
+    return JsonResponse({
+        'result': 'success',
+        'answer': secret_word,
+        'similar_words': _build_related_words(secret_word, top_list, limit=12),
+    })
 
 
 # ==========================================
@@ -404,7 +618,7 @@ def game_2048(request):
     return render(request, 'core/games/2048.html')
 
 def api_2048_rank(request):
-    today = timezone.now().date()
+    period = resolve_rank_period(request)
     
     if request.method == 'POST':
         post_limit = getattr(settings, 'GAME_RANK_POST_RATE_LIMIT', 10)
@@ -437,19 +651,19 @@ def api_2048_rank(request):
             return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
     records = GameRecord.objects.filter(
-        game_type='2048', 
-        created_at__date=today
+        game_type='2048',
+        **rank_date_filters(period),
     ).order_by('-score')[:10]
     
     data = [{'name': r.player_name, 'score': r.score} for r in records]
-    return JsonResponse({'ranking': data})
+    return JsonResponse({'ranking': data, 'period': period})
 
 # --- 반응속도 게임 ---
 def game_reaction(request):
     return render(request, 'core/games/reaction.html')
 
 def api_reaction_rank(request):
-    today = timezone.now().date()
+    period = resolve_rank_period(request)
     
     if request.method == 'POST':
         post_limit = getattr(settings, 'GAME_RANK_POST_RATE_LIMIT', 10)
@@ -484,19 +698,19 @@ def api_reaction_rank(request):
 
     # 반응속도는 낮은 점수가 1등 (오름차순)
     records = GameRecord.objects.filter(
-        game_type='reaction', 
-        created_at__date=today
+        game_type='reaction',
+        **rank_date_filters(period),
     ).order_by('score')[:10] 
     
     data = [{'name': r.player_name, 'score': r.score} for r in records]
-    return JsonResponse({'ranking': data})
+    return JsonResponse({'ranking': data, 'period': period})
 
 # --- 워들(Wordle) ---
 def game_wordle(request):
     return render(request, 'core/games/wordle.html')
 
 def api_wordle_rank(request):
-    today = timezone.now().date()
+    period = resolve_rank_period(request)
     
     if request.method == 'POST':
         post_limit = getattr(settings, 'GAME_RANK_POST_RATE_LIMIT', 10)
@@ -529,9 +743,9 @@ def api_wordle_rank(request):
 
     # 시도 횟수가 적은 게 1등
     records = GameRecord.objects.filter(
-        game_type='wordle', 
-        created_at__date=today
+        game_type='wordle',
+        **rank_date_filters(period),
     ).order_by('score', '-created_at')[:10]
     
     data = [{'name': r.player_name, 'score': r.score} for r in records]
-    return JsonResponse({'ranking': data})
+    return JsonResponse({'ranking': data, 'period': period})
