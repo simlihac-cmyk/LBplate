@@ -1,0 +1,115 @@
+/* Blog home page layout and components */
+
+.no-click {
+    cursor: default;
+    pointer-events: none;
+}
+
+.no-click .card-title {
+    pointer-events: auto;
+}
+
+.blog-intro-title {
+    margin-top: 10px;
+}
+
+.blog-intro-desc {
+    font-size: 0.9rem;
+    color: var(--text-dim);
+    line-height: 1.5;
+    margin-top: 10px;
+}
+
+.bento-search-form {
+    display: flex;
+    background: var(--bg-color);
+    border-radius: 12px;
+    margin-top: 15px;
+    padding: 5px 15px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.bento-search-form input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 10px;
+    outline: none;
+    color: var(--text-color);
+}
+
+.bento-search-form button {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1rem;
+}
+
+.category-quick-tags {
+    margin-top: 15px;
+}
+
+.mini-tag {
+    display: inline-block;
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    background: var(--bg-color);
+    border-radius: 6px;
+    text-decoration: none;
+    color: var(--text-dim);
+    margin-right: 5px;
+    transition: 0.2s;
+    pointer-events: auto;
+}
+
+.mini-tag:hover {
+    background: var(--accent-color);
+    color: #fff;
+}
+
+.post-full-card {
+    height: 100%;
+    transition: all 0.3s ease;
+}
+
+.card-wrapper:hover .post-full-card {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.08);
+}
+
+.post-summary {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    margin-top: 12px;
+    line-height: 1.6;
+}
+
+.blog-empty-card {
+    text-align: center;
+    padding: 60px;
+}
+
+.blog-empty-text {
+    color: var(--text-dim);
+}
+
+.pagination-wrapper {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.page-link {
+    text-decoration: none;
+    padding: 8px 15px;
+    border-radius: 8px;
+    background: var(--bg-color);
+    color: var(--text-color);
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.page-link.active {
+    background: var(--accent-color);
+    color: #fff;
+}

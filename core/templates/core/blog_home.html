@@ -2,13 +2,14 @@
 {% load static %}
 
 {% block title %}Blog - 미생물의 똑똑한 하루{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'core/css/blog_home.css' %}?v=1.0">{% endblock %}
 
 {% block content %}
 <div class="container">
     <div class="card col-2 no-click" id="blog-intro">
         <span class="card-label">About Blog</span>
-        <h2 class="card-title" style="margin-top: 10px;">미생물의 똑똑한 하루</h2>
-        <p style="font-size: 0.9rem; color: var(--text-dim); line-height: 1.5; margin-top: 10px;">
+        <h2 class="card-title blog-intro-title">미생물의 똑똑한 하루</h2>
+        <p class="blog-intro-desc">
             LB plate의 개인 연구 기록 및 일상 일지입니다.<br>
             미생물처럼 작지만 소중한 하루의 데이터들을 차곡차곡 쌓아갑니다. </p>
     </div>
@@ -19,7 +20,7 @@
             <input type="text" name="search" placeholder="키워드로 기록 찾기..." value="{{ search_query|default:'' }}">
             <button type="submit">🔍</button>
         </form>
-        <div class="category-quick-tags" style="margin-top: 15px;">
+        <div class="category-quick-tags">
             {% for cat in categories|slice:":5" %}
                 <a href="{% url 'blog_home' %}?category={{ cat.id }}" class="mini-tag" data-track-event="blog_category_click" data-track-category="blog" data-track-label="cat_{{ cat.id }}">{{ cat.name }}</a>
             {% endfor %}
@@ -38,8 +39,8 @@
         </a>
         {% endfor %}
     {% else %}
-        <div class="card col-4" style="text-align: center; padding: 60px;">
-            <p style="color: var(--text-dim);">해당하는 기록이 아직 없습니다. 🦠</p>
+        <div class="card col-4 blog-empty-card">
+            <p class="blog-empty-text">해당하는 기록이 아직 없습니다. 🦠</p>
         </div>
     {% endif %}
 
@@ -66,67 +67,4 @@
     {% endif %}
 </div>
 
-<style>
-    /* 블로그 소개 전용 (클릭 방지) */
-    .no-click {
-        cursor: default;
-        pointer-events: none;
-    }
-    .no-click .card-title { pointer-events: auto; } /* 텍스트 선택은 가능하게 */
-
-    /* 검색창 스타일 */
-    .bento-search-form {
-        display: flex;
-        background: var(--bg-color);
-        border-radius: 12px;
-        margin-top: 15px;
-        padding: 5px 15px;
-        border: 1px solid rgba(0,0,0,0.05);
-    }
-    .bento-search-form input {
-        flex: 1; border: none; background: transparent; padding: 10px; outline: none; color: var(--text-color);
-    }
-    .bento-search-form button {
-        background: transparent; border: none; cursor: pointer; font-size: 1.1rem;
-    }
-
-    /* 미니 카테고리 태그 */
-    .mini-tag {
-        display: inline-block;
-        font-size: 0.75rem;
-        padding: 4px 10px;
-        background: var(--bg-color);
-        border-radius: 6px;
-        text-decoration: none;
-        color: var(--text-dim);
-        margin-right: 5px;
-        transition: 0.2s;
-        pointer-events: auto;
-    }
-    .mini-tag:hover { background: var(--accent-color); color: white; }
-
-    /* 포스트 카드 보정 */
-    .post-full-card {
-        height: 100%;
-        transition: all 0.3s ease;
-    }
-    .card-wrapper:hover .post-full-card {
-        transform: translateY(-5px);
-        box-shadow: 0 15px 30px rgba(0,0,0,0.08);
-    }
-    .post-summary {
-        font-size: 0.85rem;
-        color: var(--text-dim);
-        margin-top: 12px;
-        line-height: 1.6;
-    }
-
-    /* 페이지네이션 */
-    .pagination-wrapper { display: flex; justify-content: center; gap: 10px; }
-    .page-link {
-        text-decoration: none; padding: 8px 15px; border-radius: 8px;
-        background: var(--bg-color); color: var(--text-color); font-weight: 600; font-size: 0.85rem;
-    }
-    .page-link.active { background: var(--accent-color); color: white; }
-</style>
 {% endblock %}
