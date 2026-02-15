@@ -6,8 +6,9 @@ REMOTE="${REMOTE:-origin}"
 BRANCH="${BRANCH:-main}"
 ENV_FILE="${ENV_FILE:-$APP_DIR/.env.production}"
 VENV_ACTIVATE="${VENV_ACTIVATE:-$APP_DIR/venv/bin/activate}"
+VENV_PYTHON="${VENV_PYTHON:-$APP_DIR/venv/bin/python}"
 TMUX_SESSION="${TMUX_SESSION:-lbplate}"
-APP_START_CMD="${APP_START_CMD:-python manage.py runserver 127.0.0.1:4000}"
+APP_START_CMD="${APP_START_CMD:-$VENV_PYTHON manage.py runserver 127.0.0.1:4000}"
 RUN_TESTS="${RUN_TESTS:-1}"
 PIP_INSTALL="${PIP_INSTALL:-1}"
 AUTO_STASH_SETTINGS="${AUTO_STASH_SETTINGS:-1}"
@@ -42,13 +43,12 @@ restart_in_tmux() {
 
 require_cmd git
 require_cmd tmux
-require_cmd python
-require_cmd pip
 
 cd "$APP_DIR"
 
 [[ -f "$ENV_FILE" ]] || die "Missing env file: $ENV_FILE"
 [[ -f "$VENV_ACTIVATE" ]] || die "Missing venv activate file: $VENV_ACTIVATE"
+[[ -x "$VENV_PYTHON" ]] || die "Missing venv python executable: $VENV_PYTHON"
 [[ -f "$APP_DIR/manage.py" ]] || die "manage.py not found in APP_DIR: $APP_DIR"
 
 if [[ "$AUTO_STASH_SETTINGS" == "1" ]] && ! git diff --quiet -- config/settings.py; then
@@ -68,19 +68,19 @@ set +a
 
 if [[ "$PIP_INSTALL" == "1" ]]; then
   log "Installing requirements"
-  pip install -r requirements.txt
+  "$VENV_PYTHON" -m pip install -r requirements.txt
 fi
 
 log "Running django checks"
-python manage.py check
+"$VENV_PYTHON" manage.py check
 
 if [[ "$RUN_TESTS" == "1" ]]; then
   log "Running tests"
-  python manage.py test core.tests -v 2
+  "$VENV_PYTHON" manage.py test core.tests -v 2
 fi
 
 log "Collecting static files"
-python manage.py collectstatic --noinput
+"$VENV_PYTHON" manage.py collectstatic --noinput
 
 restart_in_tmux
 

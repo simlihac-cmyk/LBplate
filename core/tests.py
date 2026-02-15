@@ -7,6 +7,7 @@ from django.urls import reverse
 from .models import GameRecord
 
 
+@override_settings(SECURE_SSL_REDIRECT=False)
 class CoreViewTests(TestCase):
     def setUp(self):
         cache.clear()
