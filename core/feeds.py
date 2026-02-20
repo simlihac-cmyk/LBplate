@@ -18,6 +18,23 @@ class WordPressPostFeed(Feed):
     feed_url = '/rss.xml'
     language = 'ko'
 
+    def _fallback_items(self):
+        now = timezone.now()
+        return [
+            {
+                'title': 'LBPlate Home',
+                'description': 'LBPlate 메인 페이지',
+                'link': reverse('home'),
+                'pubdate': now,
+            },
+            {
+                'title': 'LBPlate Blog',
+                'description': 'LBPlate 블로그',
+                'link': reverse('blog_home'),
+                'pubdate': now,
+            },
+        ]
+
     def items(self):
         try:
             posts, _ = fetch_wp_json(
@@ -30,18 +47,26 @@ class WordPressPostFeed(Feed):
                 },
                 cache_timeout=300,
             )
-            return posts
+            return posts if posts else self._fallback_items()
         except requests.RequestException:
-            return []
+            return self._fallback_items()
         except ValueError:
-            return []
+            return self._fallback_items()
 
     def item_title(self, item):
-        rendered = item.get('title', {}).get('rendered', '')
+        title = item.get('title', '')
+        if isinstance(title, dict):
+            rendered = title.get('rendered', '')
+        else:
+            rendered = str(title)
         cleaned = unescape(strip_tags(rendered)).strip()
-        return cleaned or f"Post {item.get('id', '')}".strip()
+        return cleaned or f"Post {item.get('id', '')}".strip() or 'LBPlate'
 
     def item_description(self, item):
+        fallback_description = item.get('description', '')
+        if isinstance(fallback_description, str) and fallback_description.strip():
+            return fallback_description.strip()
+
         rendered = (
             item.get('excerpt', {}).get('rendered')
             or item.get('content', {}).get('rendered')
@@ -51,9 +76,15 @@ class WordPressPostFeed(Feed):
         return cleaned[:300]
 
     def item_link(self, item):
-        return reverse('post_detail', kwargs={'post_id': item['id']})
+        if item.get('id') is not None:
+            return reverse('post_detail', kwargs={'post_id': item['id']})
+        return item.get('link', reverse('home'))
 
     def item_pubdate(self, item):
+        pubdate = item.get('pubdate')
+        if pubdate is not None:
+            return pubdate
+
         raw_datetime = (
             item.get('date_gmt')
             or item.get('modified_gmt')

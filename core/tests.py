@@ -147,6 +147,16 @@ class CoreViewTests(TestCase):
         self.assertContains(response, '/post/77/')
         self.assertContains(response, '테스트 포스트')
 
+    @patch('core.feeds.fetch_wp_json')
+    def test_rss_feed_falls_back_when_wp_fetch_fails(self, mock_fetch_wp_json):
+        mock_fetch_wp_json.side_effect = requests.RequestException('wp down')
+
+        response = self.client.get(reverse('rss_feed'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'LBPlate Home')
+        self.assertContains(response, '/')
+
     def test_api_2048_rank_weekly_filters_last_7_days(self):
         in_week = GameRecord.objects.create(game_type='2048', player_name='weekuser', score=2048)
         out_week = GameRecord.objects.create(game_type='2048', player_name='olduser', score=4096)
