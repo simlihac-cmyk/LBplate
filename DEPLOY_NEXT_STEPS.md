@@ -137,3 +137,24 @@ Validation:
 - Add monitoring/alerts (Sentry + webhook)
 - Add backup/restore script and weekly restore drill
 - Conversion 운영은 `GA4_CONVERSION_PLAYBOOK.md`를 기준으로 점검
+
+## 7) Naver Search Advisor: RSS/Sitemap 제출
+
+제출 대상 URL (production):
+- Site: `https://monosaccharide180.com/`
+- Robots: `https://monosaccharide180.com/robots.txt`
+- Sitemap: `https://monosaccharide180.com/sitemap.xml`
+- RSS: `https://monosaccharide180.com/rss.xml`
+
+제출 순서:
+1. Search Advisor에서 사이트 등록 + 소유 확인
+2. `요청 > 사이트맵 제출`에 `https://monosaccharide180.com/sitemap.xml` 등록
+3. `요청 > RSS 제출`에 `https://monosaccharide180.com/rss.xml` 등록
+4. 수집 상태/오류를 주기적으로 확인하고, 오류 URL은 수정 후 재요청
+
+배포 후 간단 점검:
+```bash
+curl -I -L --max-time 20 https://monosaccharide180.com/sitemap.xml
+curl -I -L --max-time 20 https://monosaccharide180.com/rss.xml
+curl -I -L --max-time 20 https://monosaccharide180.com/robots.txt
+```

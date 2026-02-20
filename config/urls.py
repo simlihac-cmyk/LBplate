@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.http import HttpResponse
 from django.urls import path
 from django.contrib.sitemaps.views import sitemap
+from core.feeds import WordPressPostFeed
 from core.sitemaps import StaticViewSitemap, WordPressPostSitemap
 from core.views import (
     home, blog_home, roulette, post_detail, ladder, utility_home,
@@ -53,5 +54,6 @@ urlpatterns = [
     # robots.txt와 sitemap.xml 경로 추가
     path("robots.txt", robots_txt),
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps_dict}, name='django.contrib.sitemaps.views.sitemap'),
+    path('rss.xml', WordPressPostFeed(), name='rss_feed'),
     
 ]
