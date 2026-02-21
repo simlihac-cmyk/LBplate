@@ -1,12 +1,19 @@
 import json
 import datetime
+import os
+import tempfile
 import requests
 from unittest.mock import patch
 from django.core.cache import cache
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
-from .models import GameRecord
+from .models import GameRecord, KkomantleDailySnapshot
+from . import views
+from .management.commands.build_kkomantle_whitelist import (
+    normalize_dict_word,
+    payload_has_exact_word,
+)
 
 
 @override_settings(SECURE_SSL_REDIRECT=False)
@@ -83,6 +90,127 @@ class CoreViewTests(TestCase):
         self.assertNotEqual(second.status_code, 429)
         self.assertEqual(third.status_code, 429)
         self.assertEqual(third.json()['result'], 'error')
+
+    def test_load_kkomantle_whitelist_filters_invalid_words(self):
+        vocabulary = {'세포', '핵심', '있는', '으로부터'}
+        with tempfile.NamedTemporaryFile('w', delete=False, encoding='utf-8') as fp:
+            fp.write('# comment\n')
+            fp.write('세포\n')
+            fp.write('핵심\n')
+            fp.write('있는\n')
+            fp.write('abc\n')
+            fp.write('으로부터\n')
+            fp.write('세포\n')
+            whitelist_path = fp.name
+
+        try:
+            loaded = views._load_kkomantle_whitelist(whitelist_path, vocabulary)
+        finally:
+            os.unlink(whitelist_path)
+
+        self.assertEqual(loaded, {'세포', '핵심'})
+
+    @patch('core.views.get_daily_word', return_value='세포')
+    @patch('core.views.get_top_words', return_value=['핵심'])
+    def test_kkomantle_guess_accepts_words_outside_whitelist(self, _mock_top_words, _mock_daily_word):
+        class DummyModel:
+            key_to_index = {'세포': 0, '핵심': 1, '기호': 2}
+
+            def similarity(self, _secret, _guess):
+                return 0.42
+
+        with patch('core.views.model', DummyModel()), patch('core.views.WORD_WHITELIST', {'세포', '핵심'}):
+            response = self.client.post(
+                reverse('api_kkomantle_guess'),
+                data=json.dumps({'word': '기호'}),
+                content_type='application/json'
+            )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload['result'], 'success')
+        self.assertEqual(payload['rank'], '3000+')
+        self.assertEqual(payload['score'], 42.0)
+
+    def test_get_top_words_is_not_limited_by_whitelist(self):
+        class DummyModel:
+            key_to_index = {'세포': 0, '핵심': 1, '기호': 2}
+
+            def most_similar(self, _secret, topn=10):
+                return [('기호', 0.9), ('핵심', 0.8)][:topn]
+
+        with patch('core.views.model', DummyModel()), patch('core.views.WORD_WHITELIST', {'세포', '핵심'}):
+            views.TODAY_CACHE['date'] = None
+            views.TODAY_CACHE['secret'] = None
+            views.TODAY_CACHE['top_words'] = []
+            top_words = views.get_top_words('세포')
+
+        self.assertIn('기호', top_words)
+        self.assertIn('핵심', top_words)
+
+    @override_settings(KKOMANTLE_HISTORY_START_DATE='2026-02-18')
+    def test_kkomantle_history_api_excludes_today_and_older_than_start_date(self):
+        today = timezone.localdate()
+        yesterday = today - datetime.timedelta(days=1)
+        two_days_ago = today - datetime.timedelta(days=2)
+        old_day = datetime.date(2026, 2, 17)
+
+        KkomantleDailySnapshot.objects.create(
+            date=today,
+            answer='오늘정답',
+            top_words=[{'rank': 1, 'word': '오늘', 'score': 99.0}],
+        )
+        KkomantleDailySnapshot.objects.create(
+            date=yesterday,
+            answer='어제정답',
+            top_words=[{'rank': 1, 'word': '어제', 'score': 88.0}],
+        )
+        KkomantleDailySnapshot.objects.create(
+            date=two_days_ago,
+            answer='이틀전정답',
+            top_words=[{'rank': 1, 'word': '이틀전', 'score': 77.0}],
+        )
+        KkomantleDailySnapshot.objects.create(
+            date=old_day,
+            answer='옛정답',
+            top_words=[{'rank': 1, 'word': '옛날', 'score': 66.0}],
+        )
+
+        response = self.client.get(reverse('api_kkomantle_history') + '?days=5')
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload['result'], 'success')
+        self.assertEqual(payload['start_date'], '2026-02-18')
+        dates = [item['date'] for item in payload['items']]
+
+        self.assertNotIn(today.isoformat(), dates)
+        self.assertIn(yesterday.isoformat(), dates)
+        self.assertIn(two_days_ago.isoformat(), dates)
+        self.assertNotIn(old_day.isoformat(), dates)
+
+    def test_payload_has_exact_word_handles_word_and_word_info(self):
+        payload_direct = {
+            'channel': {
+                'total': 1,
+                'item': [{'word': '사과-나무'}]
+            }
+        }
+        payload_info = {
+            'channel': {
+                'total': '1',
+                'item': [{'word_info': {'word': '  사과 나무  '}}]
+            }
+        }
+
+        self.assertTrue(payload_has_exact_word(payload_direct, '사과나무'))
+        self.assertTrue(payload_has_exact_word(payload_info, '사과나무'))
+        self.assertFalse(payload_has_exact_word(payload_info, '사과'))
+
+    def test_normalize_dict_word_strips_separators(self):
+        self.assertEqual(normalize_dict_word(' 사과-나무 '), '사과나무')
+        self.assertEqual(normalize_dict_word('사과^나무'), '사과나무')
+        self.assertEqual(normalize_dict_word(None), '')
 
     @override_settings(GAME_RANK_POST_RATE_LIMIT=1, GAME_RANK_POST_RATE_WINDOW=60)
     def test_rank_api_rate_limit_blocks_second_post(self):
@@ -195,3 +323,123 @@ class CoreViewTests(TestCase):
         self.assertEqual(payload['period'], 'weekly')
         self.assertGreaterEqual(len(payload['ranking']), 2)
         self.assertEqual(payload['ranking'][0]['name'], 'quick')
+
+    @patch('core.views.CANDIDATES', ['정답'])
+    @patch('core.views.MODEL_VOCABULARY', {'정답', '오답'})
+    def test_kkomantle_challenge_start_returns_round_hint(self):
+        class DummyModel:
+            key_to_index = {'정답': 0, '오답': 1}
+
+            def most_similar(self, _secret, topn=10):
+                words = [f"단어{chr(0xAC00 + i)}" for i in range(120)]
+                return [(w, 0.8) for w in words[:topn]]
+
+            def similarity(self, first, second):
+                if first == second:
+                    return 1.0
+                return 0.33
+
+        with patch('core.views.model', DummyModel()):
+            response = self.client.post(
+                reverse('api_kkomantle_challenge_start'),
+                data=json.dumps({'start': True}),
+                content_type='application/json'
+            )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload['result'], 'success')
+        self.assertEqual(payload['round'], 1)
+        self.assertEqual(payload['attempt_left'], 10)
+        self.assertEqual([row['rank'] for row in payload['hint']], [25, 30, 35])
+
+    @patch('core.views.CANDIDATES', ['정답'])
+    @patch('core.views.MODEL_VOCABULARY', {'정답', '오답'})
+    def test_kkomantle_challenge_guess_round_clear(self):
+        class DummyModel:
+            key_to_index = {'정답': 0, '오답': 1}
+
+            def most_similar(self, _secret, topn=10):
+                words = [f"단어{chr(0xAC00 + i)}" for i in range(120)]
+                return [(w, 0.8) for w in words[:topn]]
+
+            def similarity(self, first, second):
+                if first == second:
+                    return 1.0
+                return 0.2
+
+        with patch('core.views.model', DummyModel()):
+            self.client.post(
+                reverse('api_kkomantle_challenge_start'),
+                data=json.dumps({'start': True}),
+                content_type='application/json'
+            )
+
+            response = self.client.post(
+                reverse('api_kkomantle_challenge_guess'),
+                data=json.dumps({'word': '정답'}),
+                content_type='application/json'
+            )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload['result'], 'round_clear')
+        self.assertEqual(payload['solved_rounds'], 1)
+        self.assertEqual(payload['next_round'], 2)
+        self.assertEqual(payload['attempt_left'], 10)
+
+    @patch('core.views.CANDIDATES', ['정답'])
+    def test_kkomantle_challenge_rank_submit_after_game_over(self):
+        wrong_words = ['오답가', '오답나', '오답다', '오답라', '오답마', '오답바', '오답사', '오답아', '오답자', '오답차']
+        vocab = {'정답', *wrong_words}
+
+        class DummyModel:
+            key_to_index = {word: idx for idx, word in enumerate(vocab)}
+
+            def most_similar(self, _secret, topn=10):
+                words = [f"단어{chr(0xAC00 + i)}" for i in range(120)]
+                return [(w, 0.8) for w in words[:topn]]
+
+            def similarity(self, first, second):
+                if first == second:
+                    return 1.0
+                return 0.11
+
+        with patch('core.views.model', DummyModel()), patch('core.views.MODEL_VOCABULARY', vocab):
+            self.client.post(
+                reverse('api_kkomantle_challenge_start'),
+                data=json.dumps({'start': True}),
+                content_type='application/json'
+            )
+
+            url_guess = reverse('api_kkomantle_challenge_guess')
+            for wrong_word in wrong_words[:9]:
+                guess_response = self.client.post(
+                    url_guess,
+                    data=json.dumps({'word': wrong_word}),
+                    content_type='application/json'
+                )
+                self.assertEqual(guess_response.status_code, 200)
+                self.assertEqual(guess_response.json()['result'], 'success')
+
+            final_response = self.client.post(
+                url_guess,
+                data=json.dumps({'word': wrong_words[9]}),
+                content_type='application/json'
+            )
+        self.assertEqual(final_response.status_code, 200)
+        final_payload = final_response.json()
+        self.assertEqual(final_payload['result'], 'game_over')
+        self.assertEqual(final_payload['eligible_score'], 0)
+
+        submit_response = self.client.post(
+            reverse('api_kkomantle_challenge_rank'),
+            data=json.dumps({'player_name': 'tester', 'score': 0}),
+            content_type='application/json'
+        )
+        self.assertEqual(submit_response.status_code, 200)
+        self.assertEqual(submit_response.json()['status'], 'success')
+        self.assertEqual(
+            GameRecord.objects.filter(game_type='kkomantle_challenge', score=0).count(),
+            1,
+        )

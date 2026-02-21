@@ -1,0 +1,84 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}꼬맨틀 챌린지 모드{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'core/css/games/kkomantle_challenge.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="challenge-container">
+    <div id="roundClearFlash" class="round-clear-flash" aria-hidden="true"></div>
+    <div id="roundClearBanner" class="round-clear-banner hidden" aria-live="polite"></div>
+
+    <header class="challenge-header">
+        <h1>⚔️ 꼬맨틀 챌린지 모드</h1>
+        <p>라운드마다 랜덤 정답이 바뀝니다. 10번 안에 맞추고 연승을 이어가세요.</p>
+        <div class="mode-switch">
+            <a href="{% url 'game_kkomantle' %}" class="mode-chip">데일리 모드</a>
+            <span class="mode-chip active">챌린지 모드</span>
+        </div>
+        <small id="challengeStatus" role="status" aria-live="polite">새 챌린지를 시작하세요.</small>
+    </header>
+
+    <section class="challenge-card">
+        <div class="stat-row">
+            <div class="stat-pill">라운드 <strong id="roundLabel">-</strong></div>
+            <div class="stat-pill">클리어 <strong id="clearLabel">0</strong></div>
+            <div class="stat-pill">남은 시도 <strong id="attemptLabel">-</strong></div>
+        </div>
+
+        <div class="hint-box">
+            <h2>시작 힌트</h2>
+            <ul id="hintList" class="hint-list">
+                <li>-</li>
+            </ul>
+        </div>
+
+        <form id="challengeGuessForm" class="guess-form">
+            <label for="challengeInput" class="sr-only">추측 단어 입력</label>
+            <input id="challengeInput" type="text" placeholder="단어를 입력하세요" autocomplete="off" required>
+            <button id="challengeSubmitBtn" type="submit">추측</button>
+            <button id="challengeRestartBtn" type="button" class="secondary-btn">새 챌린지</button>
+        </form>
+
+        <ul id="challengeGuessList" class="guess-list" aria-live="polite"></ul>
+    </section>
+
+    <section id="challengeResult" class="result-card hidden">
+        <h2>게임 오버</h2>
+        <p id="resultSummary">-</p>
+        <p id="resultAnswer">-</p>
+        <ul id="resultRelated" class="related-list"></ul>
+
+        <div id="rankSubmitArea" class="rank-submit hidden">
+            <h3>랭킹 등록</h3>
+            <div class="rank-submit-row">
+                <input type="text" id="rankNameInput" placeholder="닉네임 (최대 10자)" maxlength="10">
+                <button id="rankSubmitBtn" type="button">등록</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="leaderboard-card">
+        <h2>챌린지 랭킹 Top 10</h2>
+        <p>클리어한 라운드 수가 높은 순서입니다.</p>
+        <ul id="challengeRankList" class="rank-list">
+            <li>불러오는 중...</li>
+        </ul>
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_script %}
+<script>
+    const CHALLENGE_CONFIG = {
+        startApiUrl: "{% url 'api_kkomantle_challenge_start' %}",
+        guessApiUrl: "{% url 'api_kkomantle_challenge_guess' %}",
+        rankApiUrl: "{% url 'api_kkomantle_challenge_rank' %}",
+        csrfToken: "{{ csrf_token }}"
+    };
+</script>
+<script src="{% static 'core/js/games/kkomantle_challenge.js' %}?v=3"></script>
+{% endblock %}

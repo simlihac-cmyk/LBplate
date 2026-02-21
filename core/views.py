@@ -12,7 +12,9 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.utils import timezone
 from django.core.cache import cache
-from .models import GameRecord
+from django.db import IntegrityError
+from .models import GameRecord, KkomantleDailySnapshot
+from .kkomantle_filters import is_clean_korean_word
 
 # 워드프레스 API 기본 주소 설정
 WP_BASE_URL = getattr(settings, 'WP_BASE_URL', 'http://127.0.0.1:4080/wp-json/wp/v2')
@@ -22,104 +24,81 @@ WP_CACHE_TIMEOUT = getattr(settings, 'WP_CACHE_TIMEOUT', 300)
 # settings.py에서 설정 가져오기
 MODEL_PATH = getattr(settings, 'WORD2VEC_MODEL_PATH', None)
 LIMIT = getattr(settings, 'WORD2VEC_LIMIT', 300000)
+WHITELIST_PATH = getattr(settings, 'KKOMANTLE_WHITELIST_PATH', None)
+MODEL_CANDIDATE_TOPN = getattr(settings, 'KKOMANTLE_MODEL_CANDIDATE_TOPN', 5000)
+MOST_SIMILAR_TOPN = getattr(settings, 'KKOMANTLE_MOST_SIMILAR_TOPN', 6000)
+TOP_WORD_LIMIT = getattr(settings, 'KKOMANTLE_TOP_WORD_LIMIT', 3000)
+MAX_WORD_LENGTH = getattr(settings, 'KKOMANTLE_MAX_WORD_LENGTH', 30)
+VALID_WORD_PATTERN = re.compile(getattr(settings, 'KKOMANTLE_WORD_REGEX', r'^[0-9A-Za-z가-힣_]+$'))
+KKOMANTLE_CHALLENGE_GAME_TYPE = 'kkomantle_challenge'
+KKOMANTLE_CHALLENGE_SESSION_KEY = 'kkomantle_challenge_state'
+KKOMANTLE_CHALLENGE_MAX_ATTEMPTS = max(1, int(getattr(settings, 'KKOMANTLE_CHALLENGE_MAX_ATTEMPTS', 10)))
+KKOMANTLE_CHALLENGE_RANK_LIMIT = max(1, int(getattr(settings, 'KKOMANTLE_CHALLENGE_RANK_LIMIT', 10)))
+_raw_hint_ranks = getattr(settings, 'KKOMANTLE_CHALLENGE_HINT_RANKS', '25,30,35')
+if isinstance(_raw_hint_ranks, str):
+    _parsed_hint_ranks = []
+    for token in _raw_hint_ranks.split(','):
+        token = token.strip()
+        if token.isdigit():
+            _parsed_hint_ranks.append(max(1, int(token)))
+    KKOMANTLE_CHALLENGE_HINT_RANKS = tuple(_parsed_hint_ranks[:3]) if _parsed_hint_ranks else (25, 30, 35)
+else:
+    try:
+        KKOMANTLE_CHALLENGE_HINT_RANKS = tuple(max(1, int(x)) for x in _raw_hint_ranks)[:3]
+    except Exception:
+        KKOMANTLE_CHALLENGE_HINT_RANKS = (25, 30, 35)
 
 model = None
 CANDIDATES = [] # 정답 후보 단어 리스트
-
-KOREAN_WORD_PATTERN = re.compile(r'^[가-힣]{2,}$')
-# 형태소 분석기 없이 조사 결합형을 줄이기 위한 보수적 휴리스틱
-MULTI_CHAR_JOSA_SUFFIXES = (
-    '으로부터', '으로서', '으로써', '에게서', '이라도', '이라서', '인데도', '인데요',
-    '처럼', '까지', '부터', '보다', '한테', '에게', '에서', '으로', '라고', '이며',
-    '인데', '이나', '라도', '밖에', '조차', '마저'
-)
-
-# 단일 글자 조사 중 오검출 위험이 상대적으로 낮은 것만 사용
-SINGLE_CHAR_JOSA_SUFFIXES = (
-    '은', '는', '을', '를', '와', '과', '에', '로', '도', '만', '랑'
-)
-
-EXCLUDED_STANDALONE_FUNCTION_WORDS = set(MULTI_CHAR_JOSA_SUFFIXES) | {
-    '또는', '및', '또한',
-}
-
-NON_DICTIONARY_SUFFIXES = (
-    # 공손/문장 종결형
-    '습니까', '습니다', '니다', '입니다', '하세요', '세요', '네요', '군요', '아요', '어요', '해요',
-    # 활용/어미 결합형
-    '인가요', '라고요', '인데요', '지만', '니까', '면서', '거나', '도록', '려고',
-    # 서술 활용형 (기본형 명사/동사/형용사에서 제외)
-    '한다', '준다', '했다', '된다', '됐다', '였다', '있는', '없는',
-)
-
-NON_DICTIONARY_DA_SUFFIXES = (
-    '한다', '준다', '된다', '했다', '됐다', '였다', '갔다', '왔다', '봤다',
-)
-
-DA_EXCLUDE_JONGSUNG_INDEXES = {20}  # ㅆ
-DA_ALLOWLIST = {'있다', '없다'}
+WORD_WHITELIST = set()
+MODEL_VOCABULARY = set()
 
 
-def _get_jongsung_index(ch):
-    code = ord(ch) - 0xAC00
-    if code < 0 or code > 11171:
-        return 0
-    return code % 28
+def _load_kkomantle_whitelist(path, vocabulary):
+    if not path:
+        return set()
+    if not os.path.exists(path):
+        print(f"⚠️ 꼬맨틀 화이트리스트 파일이 없습니다: {path}")
+        return set()
 
+    raw_words = []
+    try:
+        with open(path, 'r', encoding='utf-8') as fp:
+            for line in fp:
+                word = line.strip()
+                if not word or word.startswith('#'):
+                    continue
+                raw_words.append(word)
+    except Exception as e:
+        print(f"⚠️ 꼬맨틀 화이트리스트 로딩 실패: {e}")
+        return set()
 
-def _looks_like_conjugated_da_form(word):
-    if not word.endswith('다') or len(word) < 2:
-        return False
-
-    if word in DA_ALLOWLIST:
-        return False
-
-    if word.endswith(NON_DICTIONARY_DA_SUFFIXES):
-        return True
-
-    prev = word[-2]
-    jongsung_idx = _get_jongsung_index(prev)
-    if jongsung_idx in DA_EXCLUDE_JONGSUNG_INDEXES:
-        return True
-
-    return False
-
-
-def _looks_like_josa_form(word, vocabulary):
-    for suffix in MULTI_CHAR_JOSA_SUFFIXES:
-        if not word.endswith(suffix):
+    filtered = []
+    seen = set()
+    for word in raw_words:
+        if word in seen:
             continue
-        stem = word[:-len(suffix)]
-        # 예: 때부터 -> 때 + 부터
-        if len(stem) < 1:
+        seen.add(word)
+        if word not in vocabulary:
             continue
-        return True
-
-    for suffix in SINGLE_CHAR_JOSA_SUFFIXES:
-        if not word.endswith(suffix):
+        if not is_clean_korean_word(word, vocabulary):
             continue
-        stem = word[:-1]
-        # 한 글자 어근으로 인한 오검출(예: 마을/가을) 최소화
-        if len(stem) < 2:
-            continue
-        if stem in vocabulary:
-            return True
+        filtered.append(word)
 
-    return False
+    print(f"✅ 꼬맨틀 화이트리스트 로딩 완료: 원본 {len(raw_words)}개 / 사용 {len(filtered)}개")
+    return set(filtered)
 
 
-def _is_clean_korean_word(word, vocabulary):
-    if not KOREAN_WORD_PATTERN.fullmatch(word):
+def _is_allowed_kkomantle_word(word, vocabulary):
+    if not is_clean_korean_word(word, vocabulary):
         return False
-    if word in EXCLUDED_STANDALONE_FUNCTION_WORDS:
-        return False
-    if word.endswith(NON_DICTIONARY_SUFFIXES):
-        return False
-    if _looks_like_conjugated_da_form(word):
-        return False
-    if _looks_like_josa_form(word, vocabulary):
+    if WORD_WHITELIST and word not in WORD_WHITELIST:
         return False
     return True
+
+
+def _is_rankable_kkomantle_word(word, vocabulary):
+    return is_clean_korean_word(word, vocabulary)
 
 
 def _build_related_words(secret_word, top_words, limit=10):
@@ -138,6 +117,14 @@ def _build_related_words(secret_word, top_words, limit=10):
             'score': round(similarity * 100, 2),
         })
     return result
+
+
+def _get_kkomantle_history_start_date():
+    raw = getattr(settings, 'KKOMANTLE_HISTORY_START_DATE', '2026-02-18')
+    try:
+        return datetime.date.fromisoformat(str(raw))
+    except Exception:
+        return datetime.date(2026, 2, 18)
 
 
 def _wp_cache_key(endpoint, params):
@@ -237,6 +224,148 @@ def rank_date_filters(period):
         }
     return {'created_at__date': today}
 
+
+def _parse_json_body(request):
+    try:
+        data = json.loads(request.body)
+        if isinstance(data, dict):
+            return data, None
+        return None, JsonResponse({'result': 'error', 'message': '잘못된 요청 형식입니다.'}, status=400)
+    except json.JSONDecodeError:
+        return None, JsonResponse({'result': 'error', 'message': '잘못된 요청 형식입니다.'}, status=400)
+    except Exception:
+        return None, JsonResponse({'result': 'error', 'message': '서버 오류가 발생했습니다.'}, status=500)
+
+
+def _validate_kkomantle_guess_word(guess):
+    if not guess:
+        return JsonResponse({'result': 'fail', 'message': '단어를 입력해주세요.'}, status=400)
+
+    if len(guess) > MAX_WORD_LENGTH:
+        return JsonResponse(
+            {'result': 'fail', 'message': f'단어 길이는 최대 {MAX_WORD_LENGTH}자입니다.'},
+            status=400
+        )
+
+    if not VALID_WORD_PATTERN.fullmatch(guess):
+        return JsonResponse(
+            {'result': 'fail', 'message': '한글/영문/숫자/밑줄(_)만 입력할 수 있어요.'},
+            status=400
+        )
+
+    return None
+
+
+def _compute_kkomantle_rank(guess, secret_word, top_list):
+    if guess == secret_word:
+        return 1
+    if guess in top_list:
+        return top_list.index(guess) + 1
+    return f"{TOP_WORD_LIMIT}+"
+
+
+def _build_guess_result(secret_word, guess, top_list):
+    similarity = model.similarity(secret_word, guess)
+    score = round(float(similarity) * 100, 2)
+    rank = _compute_kkomantle_rank(guess, secret_word, top_list)
+    return score, rank
+
+
+def get_top_words_for_secret(secret_word):
+    """특정 정답 단어의 유사도 상위 단어를 캐시 기반으로 반환."""
+    if not model:
+        return []
+
+    cache_key = f'kkomantle:top:{secret_word}'
+    cached = cache.get(cache_key)
+    if isinstance(cached, list):
+        return cached
+
+    try:
+        raw_list = model.most_similar(secret_word, topn=MOST_SIMILAR_TOPN)
+    except Exception:
+        return []
+
+    top_list = []
+    for word, _score in raw_list:
+        if _is_rankable_kkomantle_word(word, MODEL_VOCABULARY):
+            top_list.append(word)
+        if len(top_list) >= TOP_WORD_LIMIT:
+            break
+
+    cache.set(cache_key, top_list, timeout=86400)
+    return top_list
+
+
+def _pick_kkomantle_challenge_secret(exclude_words=None):
+    if not model or not CANDIDATES:
+        return '세포'
+
+    exclude = set(exclude_words or [])
+    available = [word for word in CANDIDATES if word not in exclude]
+    pool = available if available else CANDIDATES
+    return random.SystemRandom().choice(pool)
+
+
+def _build_challenge_hint(secret_word):
+    top_list = get_top_words_for_secret(secret_word)
+    if not top_list:
+        return None
+
+    hints = []
+    for rank in KKOMANTLE_CHALLENGE_HINT_RANKS:
+        target_rank = min(rank, len(top_list))
+        hint_word = top_list[target_rank - 1]
+        hint_score = round(float(model.similarity(secret_word, hint_word)) * 100, 2)
+        hints.append({
+            'rank': target_rank,
+            'word': hint_word,
+            'score': hint_score,
+        })
+    return hints
+
+
+def _start_new_challenge_round(state, round_number, solved_rounds):
+    used_words = set(state.get('used_words') or [])
+    secret_word = _pick_kkomantle_challenge_secret(used_words)
+    used_words.add(secret_word)
+
+    hint = _build_challenge_hint(secret_word)
+    state.update({
+        'active': True,
+        'round': round_number,
+        'solved_rounds': solved_rounds,
+        'secret_word': secret_word,
+        'attempt_used': 0,
+        'max_attempts': KKOMANTLE_CHALLENGE_MAX_ATTEMPTS,
+        'round_guesses': [],
+        'used_words': list(used_words),
+    })
+    if hint:
+        state['hint'] = hint
+    else:
+        state['hint'] = []
+    return state
+
+
+def _get_challenge_state(request):
+    state = request.session.get(KKOMANTLE_CHALLENGE_SESSION_KEY)
+    if isinstance(state, dict):
+        return state
+    return None
+
+
+def _set_challenge_state(request, state):
+    request.session[KKOMANTLE_CHALLENGE_SESSION_KEY] = state
+    request.session.modified = True
+
+
+def _get_challenge_ranking(limit=KKOMANTLE_CHALLENGE_RANK_LIMIT):
+    records = GameRecord.objects.filter(
+        game_type=KKOMANTLE_CHALLENGE_GAME_TYPE,
+    ).order_by('-score', '-created_at')[:limit]
+    return [{'name': row.player_name, 'score': row.score} for row in records]
+
 # ==========================================
 # 1. AI 모델 로딩 (서버 시작 시 1회 실행)
 # ==========================================
@@ -246,11 +375,23 @@ if MODEL_PATH and os.path.exists(MODEL_PATH):
         model = KeyedVectors.load_word2vec_format(MODEL_PATH, binary=False, limit=LIMIT)
         print("✅ 모델 로딩 완료!")
         
+        MODEL_VOCABULARY = set(model.key_to_index)
+        WORD_WHITELIST = _load_kkomantle_whitelist(WHITELIST_PATH, MODEL_VOCABULARY)
+
         # [오늘의 단어 후보군 만들기]
-        # 상위 빈도 단어 중 "한글 단어 + 조사 결합형 제외" 조건으로 필터링
-        raw_candidates = model.index_to_key[:5000]
-        vocabulary = set(model.key_to_index)
-        CANDIDATES = [w for w in raw_candidates if _is_clean_korean_word(w, vocabulary)]
+        # 화이트리스트가 있으면 우선 사용하고, 없으면 모델 상위 빈도 후보에서 필터링
+        if WORD_WHITELIST:
+            CANDIDATES = []
+            for word in model.index_to_key:
+                if word in WORD_WHITELIST:
+                    CANDIDATES.append(word)
+                if len(CANDIDATES) >= MODEL_CANDIDATE_TOPN:
+                    break
+            print(f"✅ 화이트리스트 기반 후보군 생성: {len(CANDIDATES)}개")
+        else:
+            raw_candidates = model.index_to_key[:MODEL_CANDIDATE_TOPN]
+            CANDIDATES = [w for w in raw_candidates if _is_allowed_kkomantle_word(w, MODEL_VOCABULARY)]
+            print(f"✅ 모델 기반 후보군 생성: {len(CANDIDATES)}개")
         
     except Exception as e:
         print(f"❌ 모델 로딩 실패: {e}")
@@ -261,25 +402,28 @@ else:
 # ==========================================
 # 2. 오늘의 정답 뽑기 함수 (핵심!)
 # ==========================================
-def get_daily_word():
+def get_daily_word_for_date(target_date):
     """
-    오늘 날짜를 기준으로 정답 단어를 결정합니다.
+    지정 날짜를 기준으로 정답 단어를 결정합니다.
     같은 날짜에는 누가 접속해도 항상 같은 단어가 나옵니다.
     """
     # 모델이나 후보군이 없으면 테스트용 단어 리턴
     if not model or not CANDIDATES:
         return "세포"
 
-    # 1. 오늘 날짜 가져오기 (예: '2026-02-12')
-    today_str = datetime.date.today().isoformat()
-    
-    # 2. 날짜를 '랜덤 시드'로 설정
+    day_str = target_date.isoformat()
+
+    # 날짜를 '랜덤 시드'로 설정
     # 이렇게 하면 오늘 하루 동안은 random이 항상 같은 순서로 작동합니다.
-    rng = random.Random(today_str)
-    
-    # 3. 후보군에서 하나 뽑기
+    rng = random.Random(day_str)
+
+    # 후보군에서 하나 뽑기
     secret_word = rng.choice(CANDIDATES)
     return secret_word
+
+
+def get_daily_word():
+    return get_daily_word_for_date(timezone.localdate())
 
 # 정답 단어와 유사한 상위 1000개 단어 캐싱
 TODAY_CACHE = {
@@ -296,27 +440,32 @@ def get_top_words(secret_word):
     if TODAY_CACHE['date'] == today_str and TODAY_CACHE['secret'] == secret_word:
         return TODAY_CACHE['top_words']
     
-    # 아니면 새로 계산 (하루에 한 번만 실행됨)
-    if model:
-        try:
-            vocabulary = set(model.key_to_index)
-            raw_list = model.most_similar(secret_word, topn=6000)
-            top_list = []
-            for item in raw_list:
-                word = item[0]
-                if _is_clean_korean_word(word, vocabulary):
-                    top_list.append(word)
-                if len(top_list) >= 3000:
-                    break
-            
-            # 캐시 업데이트
-            TODAY_CACHE['date'] = today_str
-            TODAY_CACHE['secret'] = secret_word
-            TODAY_CACHE['top_words'] = top_list
-            return top_list
-        except:
-            return []
-    return []
+    top_list = get_top_words_for_secret(secret_word)
+    TODAY_CACHE['date'] = today_str
+    TODAY_CACHE['secret'] = secret_word
+    TODAY_CACHE['top_words'] = top_list
+    return top_list
+
+
+def get_or_create_kkomantle_snapshot(target_date):
+    snapshot = KkomantleDailySnapshot.objects.filter(date=target_date).first()
+    if snapshot:
+        return snapshot
+
+    answer = get_daily_word_for_date(target_date)
+    top_words = get_top_words(answer)
+    related_words = _build_related_words(answer, top_words, limit=20)
+
+    try:
+        snapshot = KkomantleDailySnapshot.objects.create(
+            date=target_date,
+            answer=answer,
+            top_words=related_words,
+        )
+    except IntegrityError:
+        snapshot = KkomantleDailySnapshot.objects.get(date=target_date)
+
+    return snapshot
 
 
 # ==========================================
@@ -338,35 +487,19 @@ def api_kkomantle_guess(request):
             status=429
         )
 
-    try:
-        data = json.loads(request.body)
-        if not isinstance(data, dict):
-            return JsonResponse({'result': 'error', 'message': '잘못된 요청 형식입니다.'}, status=400)
-        guess = data.get('word', '').strip()
-    except json.JSONDecodeError:
-        return JsonResponse({'result': 'error', 'message': '잘못된 요청 형식입니다.'}, status=400)
-    except Exception as e:
-        print(f"Error: {e}")
-        return JsonResponse({'result': 'error', 'message': '서버 오류가 발생했습니다.'}, status=500)
-
-    if not guess:
-        return JsonResponse({'result': 'fail', 'message': '단어를 입력해주세요.'}, status=400)
-
-    max_length = getattr(settings, 'KKOMANTLE_MAX_WORD_LENGTH', 30)
-    if len(guess) > max_length:
-        return JsonResponse({'result': 'fail', 'message': f'단어 길이는 최대 {max_length}자입니다.'}, status=400)
+    data, error_response = _parse_json_body(request)
+    if error_response:
+        return error_response
+    guess = (data.get('word') or '').strip()
 
     # 개발용 치트 키는 입력 검증보다 우선 허용
     if guess == "!b1023582":
         secret_word = get_daily_word()
         return JsonResponse({'result': 'fail', 'message': f"🤫 쉿! 오늘의 정답은 '{secret_word}' 입니다."})
 
-    valid_pattern = re.compile(getattr(settings, 'KKOMANTLE_WORD_REGEX', r'^[0-9A-Za-z가-힣_]+$'))
-    if not valid_pattern.fullmatch(guess):
-        return JsonResponse(
-            {'result': 'fail', 'message': '한글/영문/숫자/밑줄(_)만 입력할 수 있어요.'},
-            status=400
-        )
+    validation_error = _validate_kkomantle_guess_word(guess)
+    if validation_error:
+        return validation_error
 
     # 모델 로딩 체크
     if not model:
@@ -377,26 +510,12 @@ def api_kkomantle_guess(request):
     secret_word = get_daily_word()
     
     # 단어가 사전에 있는지 체크
-    if guess not in model.key_to_index:
+    if guess not in MODEL_VOCABULARY:
         return JsonResponse({'result': 'fail', 'message': f"'{guess}'은(는) 제가 모르는 단어예요."})
     
     try:
-        # 순위표 준비
         top_list = get_top_words(secret_word)
-
-        # ★ 에러 수정 부분: float32 -> float 형변환 ★
-        similarity = model.similarity(secret_word, guess)
-        score = float(similarity) * 100 
-        score = round(score, 2)
-
-        # 순위 계산
-        rank = None
-        if guess == secret_word:
-            rank = 1
-        elif guess in top_list:
-            rank = top_list.index(guess) + 1
-        else:
-            rank = "3000+"
+        score, rank = _build_guess_result(secret_word, guess, top_list)
 
         # 결과 반환
         result_type = 'success'
@@ -433,10 +552,11 @@ def api_kkomantle_hint(request):
     if not model:
         return JsonResponse({'result': 'error', 'message': 'AI 모델을 불러오지 못했습니다.'}, status=503)
 
+    data, error_response = _parse_json_body(request)
+    if error_response:
+        return error_response
+
     try:
-        data = json.loads(request.body)
-        if not isinstance(data, dict):
-            return JsonResponse({'result': 'error', 'message': '잘못된 요청 형식입니다.'}, status=400)
         step = int(data.get('step', 1))
     except Exception:
         return JsonResponse({'result': 'error', 'message': '잘못된 요청 형식입니다.'}, status=400)
@@ -486,6 +606,233 @@ def api_kkomantle_surrender(request):
         'answer': secret_word,
         'similar_words': _build_related_words(secret_word, top_list, limit=12),
     })
+
+
+def api_kkomantle_history(request):
+    if request.method != 'GET':
+        return JsonResponse({'result': 'error'}, status=400)
+
+    rate_limit = getattr(settings, 'KKOMANTLE_HISTORY_RATE_LIMIT', 20)
+    rate_window = getattr(settings, 'KKOMANTLE_HISTORY_RATE_WINDOW', 60)
+    if is_rate_limited(request, 'kkomantle_history', rate_limit, rate_window):
+        return JsonResponse(
+            {'result': 'error', 'message': '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.'},
+            status=429
+        )
+
+    max_days = max(1, getattr(settings, 'KKOMANTLE_HISTORY_MAX_DAYS', 30))
+    try:
+        days = int((request.GET.get('days') or '7').strip())
+    except Exception:
+        days = 7
+    days = max(1, min(days, max_days))
+
+    start_date = _get_kkomantle_history_start_date()
+    today = timezone.localdate()
+    cursor = today - datetime.timedelta(days=1)
+
+    items = []
+    while len(items) < days and cursor >= start_date:
+        snapshot = get_or_create_kkomantle_snapshot(cursor)
+        words = snapshot.top_words if isinstance(snapshot.top_words, list) else []
+        items.append({
+            'date': snapshot.date.isoformat(),
+            'answer': snapshot.answer,
+            'top_words': words[:20],
+        })
+        cursor -= datetime.timedelta(days=1)
+
+    return JsonResponse({
+        'result': 'success',
+        'start_date': start_date.isoformat(),
+        'items': items,
+    })
+
+
+def game_kkomantle_challenge(request):
+    return render(request, 'core/games/kkomantle_challenge.html')
+
+
+def api_kkomantle_challenge_start(request):
+    if request.method != 'POST':
+        return JsonResponse({'result': 'error'}, status=400)
+
+    post_limit = getattr(settings, 'KKOMANTLE_CHALLENGE_POST_RATE_LIMIT', 45)
+    post_window = getattr(settings, 'KKOMANTLE_CHALLENGE_POST_RATE_WINDOW', 60)
+    if is_rate_limited(request, 'kkomantle_challenge_start', post_limit, post_window):
+        return JsonResponse(
+            {'result': 'error', 'message': '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.'},
+            status=429
+        )
+
+    if not model:
+        return JsonResponse({'result': 'error', 'message': 'AI 모델을 불러오지 못했습니다.'}, status=503)
+
+    state = {}
+    _start_new_challenge_round(state, round_number=1, solved_rounds=0)
+    state['eligible_score'] = None
+    state['rank_submitted'] = False
+    _set_challenge_state(request, state)
+
+    return JsonResponse({
+        'result': 'success',
+        'round': state['round'],
+        'solved_rounds': state['solved_rounds'],
+        'attempt_used': state['attempt_used'],
+        'attempt_left': state['max_attempts'] - state['attempt_used'],
+        'hint': state['hint'],
+        'ranking': _get_challenge_ranking(),
+    })
+
+
+def api_kkomantle_challenge_guess(request):
+    if request.method != 'POST':
+        return JsonResponse({'result': 'error'}, status=400)
+
+    post_limit = getattr(settings, 'KKOMANTLE_CHALLENGE_POST_RATE_LIMIT', 45)
+    post_window = getattr(settings, 'KKOMANTLE_CHALLENGE_POST_RATE_WINDOW', 60)
+    if is_rate_limited(request, 'kkomantle_challenge_guess', post_limit, post_window):
+        return JsonResponse(
+            {'result': 'error', 'message': '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.'},
+            status=429
+        )
+
+    if not model:
+        return JsonResponse({'result': 'error', 'message': 'AI 모델을 불러오지 못했습니다.'}, status=503)
+
+    state = _get_challenge_state(request)
+    if not state or not state.get('active'):
+        return JsonResponse(
+            {'result': 'fail', 'message': '먼저 챌린지 시작 버튼을 눌러주세요.'},
+            status=400
+        )
+
+    data, error_response = _parse_json_body(request)
+    if error_response:
+        return error_response
+    guess = (data.get('word') or '').strip()
+
+    validation_error = _validate_kkomantle_guess_word(guess)
+    if validation_error:
+        return validation_error
+
+    if guess not in MODEL_VOCABULARY:
+        return JsonResponse({'result': 'fail', 'message': f"'{guess}'은(는) 제가 모르는 단어예요."})
+
+    round_guesses = set(state.get('round_guesses') or [])
+    if guess in round_guesses:
+        return JsonResponse({'result': 'fail', 'message': '이번 라운드에서 이미 입력한 단어입니다.'})
+
+    secret_word = state.get('secret_word') or _pick_kkomantle_challenge_secret()
+    top_list = get_top_words_for_secret(secret_word)
+    score, rank = _build_guess_result(secret_word, guess, top_list)
+
+    attempt_used = int(state.get('attempt_used') or 0) + 1
+    max_attempts = int(state.get('max_attempts') or KKOMANTLE_CHALLENGE_MAX_ATTEMPTS)
+    round_guesses.add(guess)
+    state['attempt_used'] = attempt_used
+    state['round_guesses'] = list(round_guesses)
+
+    if guess == secret_word:
+        solved_rounds = int(state.get('solved_rounds') or 0) + 1
+        round_number = int(state.get('round') or 1)
+        _start_new_challenge_round(state, round_number=round_number + 1, solved_rounds=solved_rounds)
+        _set_challenge_state(request, state)
+        return JsonResponse({
+            'result': 'round_clear',
+            'score': score,
+            'rank': rank,
+            'answer': secret_word,
+            'solved_rounds': state['solved_rounds'],
+            'next_round': state['round'],
+            'attempt_used': state['attempt_used'],
+            'attempt_left': state['max_attempts'] - state['attempt_used'],
+            'hint': state['hint'],
+        })
+
+    attempt_left = max(0, max_attempts - attempt_used)
+    if attempt_left == 0:
+        solved_rounds = int(state.get('solved_rounds') or 0)
+        state['active'] = False
+        state['eligible_score'] = solved_rounds
+        state['rank_submitted'] = False
+        _set_challenge_state(request, state)
+        return JsonResponse({
+            'result': 'game_over',
+            'score': score,
+            'rank': rank,
+            'answer': secret_word,
+            'solved_rounds': solved_rounds,
+            'eligible_score': solved_rounds,
+            'similar_words': _build_related_words(secret_word, top_list, limit=12),
+        })
+
+    _set_challenge_state(request, state)
+    return JsonResponse({
+        'result': 'success',
+        'score': score,
+        'rank': rank,
+        'round': state.get('round', 1),
+        'solved_rounds': state.get('solved_rounds', 0),
+        'attempt_used': attempt_used,
+        'attempt_left': attempt_left,
+    })
+
+
+def api_kkomantle_challenge_rank(request):
+    if request.method == 'GET':
+        state = _get_challenge_state(request) or {}
+        can_submit = state.get('eligible_score') is not None and not state.get('rank_submitted')
+        return JsonResponse({
+            'status': 'success',
+            'ranking': _get_challenge_ranking(),
+            'can_submit': can_submit,
+            'eligible_score': state.get('eligible_score'),
+        })
+
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error'}, status=400)
+
+    post_limit = getattr(settings, 'GAME_RANK_POST_RATE_LIMIT', 10)
+    post_window = getattr(settings, 'GAME_RANK_POST_RATE_WINDOW', 60)
+    if is_rate_limited(request, 'rank_kkomantle_challenge', post_limit, post_window):
+        return JsonResponse(
+            {'status': 'error', 'message': '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.'},
+            status=429
+        )
+
+    state = _get_challenge_state(request) or {}
+    eligible_score = state.get('eligible_score')
+    if eligible_score is None or state.get('rank_submitted'):
+        return JsonResponse(
+            {'status': 'error', 'message': '등록 가능한 챌린지 기록이 없습니다.'},
+            status=400
+        )
+
+    data, error_response = _parse_json_body(request)
+    if error_response:
+        return JsonResponse({'status': 'error', 'message': '잘못된 요청 형식입니다.'}, status=400)
+
+    try:
+        submitted_score = int(data.get('score', eligible_score))
+    except Exception:
+        return JsonResponse({'status': 'error', 'message': '점수 형식이 올바르지 않습니다.'}, status=400)
+
+    eligible_score = int(eligible_score)
+    if submitted_score != eligible_score:
+        return JsonResponse({'status': 'error', 'message': '기록 검증에 실패했습니다.'}, status=400)
+
+    player_name = normalize_player_name(data.get('player_name'))
+    GameRecord.objects.create(
+        game_type=KKOMANTLE_CHALLENGE_GAME_TYPE,
+        player_name=player_name,
+        score=eligible_score,
+    )
+
+    state['eligible_score'] = None
+    state['rank_submitted'] = True
+    _set_challenge_state(request, state)
+    return JsonResponse({'status': 'success', 'ranking': _get_challenge_ranking()})
 
 
 # ==========================================

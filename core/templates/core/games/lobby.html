@@ -14,8 +14,17 @@
         <a href="{% url 'game_kkomantle' %}" class="game-card active featured" data-track-event="game_start_click" data-track-category="games" data-track-label="kkomantle">
             <div class="game-icon">🧩</div>
             <div class="game-info">
-                <h3>꼬맨틀 (Kkomantle) <span class="new-badge">NEW</span></h3>
+                <h3>꼬맨틀 데일리 모드 <span class="new-badge">NEW</span></h3>
                 <p>AI가 생각하는 단어의 의미를 맞춰보세요. <br>오늘의 비밀 단어는 무엇일까요?</p>
+                <span class="status-badge play">Play Now →</span>
+            </div>
+        </a>
+
+        <a href="{% url 'game_kkomantle_challenge' %}" class="game-card active" data-track-event="game_start_click" data-track-category="games" data-track-label="kkomantle_challenge">
+            <div class="game-icon">⚔️</div>
+            <div class="game-info">
+                <h3>꼬맨틀 챌린지 모드</h3>
+                <p>매 라운드 랜덤 정답 + 10회 제한. 연속 클리어 최고기록을 노려보세요.</p>
                 <span class="status-badge play">Play Now →</span>
             </div>
         </a>

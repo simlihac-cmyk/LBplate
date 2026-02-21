@@ -6,6 +6,7 @@ class GameRecord(models.Model):
         ('2048', '2048'),
         ('wordle', 'Wordle'),
         ('reaction', 'Reaction Speed'),
+        ('kkomantle_challenge', 'Kkomantle Challenge'),
     ]
 
     game_type = models.CharField(max_length=20, choices=GAME_CHOICES, default='2048')
@@ -18,3 +19,16 @@ class GameRecord(models.Model):
 
     def __str__(self):
         return f"{self.game_type} - {self.player_name}: {self.score}"
+
+
+class KkomantleDailySnapshot(models.Model):
+    date = models.DateField(unique=True, db_index=True)
+    answer = models.CharField(max_length=50)
+    top_words = models.JSONField(default=list)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-date']
+
+    def __str__(self):
+        return f"kkomantle:{self.date} ({self.answer})"

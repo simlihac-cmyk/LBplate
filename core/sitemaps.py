@@ -55,6 +55,7 @@ class StaticViewSitemap(Sitemap):
             'game_reaction',
             'game_wordle',
             'game_kkomantle',
+            'game_kkomantle_challenge',
             'ladder',
             'roulette',
             'policy_privacy',

@@ -17,6 +17,11 @@ const relatedList = document.getElementById('relatedList');
 const summaryCount = document.getElementById('summaryCount');
 const summaryBestScore = document.getElementById('summaryBestScore');
 const summaryHotCount = document.getElementById('summaryHotCount');
+const historyBtn = document.getElementById('historyBtn');
+const historyModal = document.getElementById('historyModal');
+const historyCloseBtn = document.getElementById('historyCloseBtn');
+const historyMeta = document.getElementById('historyMeta');
+const historyList = document.getElementById('historyList');
 
 const HINT_RANKS = [1000, 500, 250];
 
@@ -26,6 +31,7 @@ let isBusy = false;
 let hintStep = 0;
 let guessSequence = 0;
 let latestGuessId = null;
+let historyLoading = false;
 
 function setStatus(message, isError = false) {
     if (!statusText) return;
@@ -135,6 +141,28 @@ if (hintBtn) {
 if (surrenderBtn) {
     surrenderBtn.addEventListener('click', surrenderGame);
 }
+
+if (historyBtn) {
+    historyBtn.addEventListener('click', openHistoryModal);
+}
+
+if (historyCloseBtn) {
+    historyCloseBtn.addEventListener('click', closeHistoryModal);
+}
+
+if (historyModal) {
+    historyModal.addEventListener('click', (event) => {
+        if (event.target === historyModal) {
+            closeHistoryModal();
+        }
+    });
+}
+
+document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    if (!historyModal || historyModal.classList.contains('hidden')) return;
+    closeHistoryModal();
+});
 
 async function submitGuess() {
     if (isGameOver || isBusy) return;
@@ -422,6 +450,94 @@ async function shareResult() {
     } catch (err) {
         console.error(err);
         setStatus('복사에 실패했습니다. 수동으로 복사해 주세요.', true);
+    }
+}
+
+function openHistoryModal() {
+    if (!historyModal) return;
+    historyModal.classList.remove('hidden');
+    loadHistory();
+}
+
+function closeHistoryModal() {
+    if (!historyModal) return;
+    historyModal.classList.add('hidden');
+}
+
+function renderHistory(items) {
+    if (!historyList) return;
+    historyList.innerHTML = '';
+
+    if (!Array.isArray(items) || items.length === 0) {
+        const empty = document.createElement('p');
+        empty.className = 'guess-empty';
+        empty.textContent = '표시할 이전 정답이 없습니다.';
+        historyList.appendChild(empty);
+        return;
+    }
+
+    items.forEach((item) => {
+        const card = document.createElement('section');
+        card.className = 'history-card';
+
+        const title = document.createElement('h3');
+        title.textContent = `${item.date} 정답: ${item.answer}`;
+        card.appendChild(title);
+
+        const words = Array.isArray(item.top_words) ? item.top_words : [];
+        if (words.length === 0) {
+            const noWords = document.createElement('p');
+            noWords.className = 'history-meta';
+            noWords.textContent = 'Top 단어 정보가 없습니다.';
+            card.appendChild(noWords);
+            historyList.appendChild(card);
+            return;
+        }
+
+        const ul = document.createElement('ul');
+        ul.className = 'history-top-list';
+        words.forEach((wordItem) => {
+            const li = document.createElement('li');
+            const score = Number(wordItem.score);
+            const scoreText = Number.isFinite(score) ? score.toFixed(2) : '-';
+            li.textContent = `#${wordItem.rank} ${wordItem.word} (${scoreText})`;
+            ul.appendChild(li);
+        });
+        card.appendChild(ul);
+        historyList.appendChild(card);
+    });
+}
+
+async function loadHistory(days = 7) {
+    if (historyLoading || !GAME_CONFIG.historyApiUrl) return;
+    historyLoading = true;
+    if (historyBtn) historyBtn.disabled = true;
+    if (historyMeta) historyMeta.textContent = '불러오는 중...';
+
+    try {
+        const url = `${GAME_CONFIG.historyApiUrl}?days=${encodeURIComponent(days)}`;
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (!response.ok || data.result !== 'success') {
+            setStatus(data.message || '이전 정답 정보를 가져오지 못했습니다.', true);
+            if (historyMeta) historyMeta.textContent = '이전 정답 정보를 가져오지 못했습니다.';
+            renderHistory([]);
+            return;
+        }
+
+        renderHistory(data.items || []);
+        if (historyMeta) {
+            const count = Array.isArray(data.items) ? data.items.length : 0;
+            historyMeta.textContent = `${data.start_date}부터 최근 ${count}일`;
+        }
+    } catch (err) {
+        console.error(err);
+        if (historyMeta) historyMeta.textContent = '서버 연결에 실패했습니다.';
+        renderHistory([]);
+    } finally {
+        historyLoading = false;
+        if (historyBtn) historyBtn.disabled = false;
     }
 }
 

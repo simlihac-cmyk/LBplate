@@ -3,6 +3,25 @@
 .header-box { text-align: center; margin-bottom: 30px; }
 .header-box h1 { font-size: 2.5rem; margin-bottom: 10px; }
 .header-box p { color: #666; }
+.mode-switch { display: inline-flex; gap: 8px; margin-bottom: 8px; }
+.mode-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    border: 1px solid #d6dce6;
+    padding: 6px 12px;
+    background: #f7f9fc;
+    color: #334155;
+    text-decoration: none;
+    font-size: 0.84rem;
+    font-weight: 700;
+}
+.mode-chip.active {
+    background: #1f5aa5;
+    border-color: #1f5aa5;
+    color: #fff;
+}
 
 .sr-only {
     position: absolute;
@@ -29,6 +48,7 @@
 .secondary-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 .danger-btn { border-color: #f5c2c7; color: #9f1d2d; background: #fff5f6; }
 .danger-btn:hover { background: #ffeef0; }
+.history-modal.hidden { display: none; }
 .hint-area, .related-area { display: none; margin-top: 14px; padding: 14px 16px; border-radius: 12px; background: #f8f9fb; border: 1px solid #eceff4; }
 .hint-area h3, .related-area h3 { margin: 0 0 8px; font-size: 0.95rem; color: #455468; }
 .hint-area ul, .related-area ul { margin: 0; padding-left: 18px; color: #374151; }
@@ -73,11 +93,83 @@
 .share-btn { background: #34C759; color: white; border: none; padding: 12px 24px; border-radius: 25px; font-size: 1rem; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: transform 0.2s; }
 .share-btn:hover { background: #248a3d; transform: scale(1.05); }
 
+/* 이전 정답 모달 */
+.history-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(17, 24, 39, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 16px;
+}
+.history-panel {
+    width: min(760px, 100%);
+    max-height: 82vh;
+    overflow: auto;
+    background: #fff;
+    border-radius: 14px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 20px 44px rgba(0, 0, 0, 0.2);
+    padding: 16px;
+}
+.history-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+.history-head h2 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #111827;
+}
+.history-close-btn {
+    border: 1px solid #d1d5db;
+    background: #f9fafb;
+    color: #374151;
+    border-radius: 10px;
+    padding: 7px 11px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.history-meta {
+    margin: 10px 0 12px;
+    color: #6b7280;
+    font-size: 0.9rem;
+}
+.history-list {
+    display: grid;
+    gap: 10px;
+}
+.history-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    background: #f9fbff;
+    padding: 12px;
+}
+.history-card h3 {
+    margin: 0 0 8px;
+    font-size: 1rem;
+    color: #1f2937;
+}
+.history-top-list {
+    margin: 0;
+    padding-left: 18px;
+    color: #374151;
+    columns: 2;
+}
+.history-top-list li {
+    margin-bottom: 4px;
+}
+
 @media (max-width: 700px) {
     .guess-item { grid-template-columns: 1fr; gap: 6px; }
     .meta-col { font-size: 0.78rem; }
     .stats-col { justify-content: flex-end; }
     .table-score-col { width: 120px; }
+    .history-top-list { columns: 1; }
 }
 
 @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
