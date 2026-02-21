@@ -10,14 +10,15 @@
 }
 
 .game-area {
-    flex: 1;
-    min-width: 300px;
-    max-width: 400px;
+    flex: 1 1 360px;
+    min-width: 0;
+    width: min(100%, 420px);
 }
 
 .rank-area {
-    flex: 1;
-    min-width: 300px;
+    flex: 1 1 300px;
+    min-width: 0;
+    width: min(100%, 360px);
     max-height: 500px;
     overflow-y: auto;
 }
@@ -74,7 +75,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 2rem;
+    font-size: clamp(1.3rem, 6vw, 2rem);
     font-weight: bold;
     color: #776e65;
     transition: all 0.15s ease;
@@ -95,11 +96,11 @@
 .tile-super { background: #3c3a32; color: white; font-size: 1.2rem; }
 
 /* 점수판 */
-.score-board { display: flex; justify-content: space-between; align-items: center; }
+.score-board { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .score-box { background: #bbada0; padding: 5px 15px; border-radius: 5px; color: white; text-align: center; }
 .score-box span:first-child { display: block; font-size: 0.8rem; color: #eee4da; }
 .score-box span:last-child { font-weight: bold; font-size: 1.2rem; }
-.restart-btn { background: #8f7a66; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+.restart-btn { background: #8f7a66; color: white; border: none; padding: 10px 16px; border-radius: 5px; cursor: pointer; font-weight: bold; }
 
 .mobile-guide { text-align: center; margin-top: 10px; color: #776e65; font-size: 0.9rem; }
 
@@ -117,3 +118,53 @@
 .rank-list li { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(0,0,0,0.1); }
 .rank-list li:last-child { border-bottom: none; }
 .rank-num { font-weight: bold; color: var(--accent-color, #007AFF); margin-right: 10px; }
+
+@media (max-width: 980px) {
+    .game-container {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .game-area,
+    .rank-area {
+        width: min(100%, 560px);
+    }
+
+    .rank-area {
+        max-height: none;
+    }
+}
+
+@media (max-width: 640px) {
+    .game-container {
+        padding: 12px;
+        gap: 14px;
+    }
+
+    .rank-header {
+        flex-wrap: wrap;
+    }
+
+    .score-board {
+        flex-wrap: wrap;
+    }
+
+    .restart-btn {
+        width: 100%;
+    }
+
+    .modal-content {
+        padding: 20px;
+    }
+
+    .modal-btns {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .modal-btns button {
+        margin: 0;
+        width: 100%;
+    }
+}

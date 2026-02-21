@@ -18,8 +18,27 @@ const dataSets = {
 document.addEventListener('DOMContentLoaded', () => {
     canvas = document.getElementById('roulette-canvas');
     if (canvas) ctx = canvas.getContext('2d');
+    resizeCanvas();
     bindRouletteEvents();
+    window.addEventListener('resize', resizeCanvas);
 });
+
+function resizeCanvas() {
+    if (!canvas || !ctx) return;
+    const rect = canvas.getBoundingClientRect();
+    const size = Math.max(220, Math.round(rect.width || 320));
+    canvas.width = size;
+    canvas.height = size;
+    drawWheel(currentItems);
+}
+
+function getWheelGeometry() {
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const radius = Math.max(30, (Math.min(canvas.width, canvas.height) / 2) - 10);
+    const textRadius = Math.max(20, radius - 12);
+    return { centerX, centerY, radius, textRadius };
+}
 
 function bindRouletteEvents() {
     document.querySelectorAll('.category-card').forEach((card) => {
@@ -49,17 +68,19 @@ function bindRouletteEvents() {
 // 룰렛 그리기 함수
 function drawWheel(items) {
     if (!ctx) return;
+    const { centerX, centerY, radius, textRadius } = getWheelGeometry();
 
     if (items.length === 0) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.beginPath();
-        ctx.arc(160, 160, 150, 0, 2 * Math.PI);
+        ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
         ctx.fillStyle = "#f0f0f0";
         ctx.fill();
         ctx.fillStyle = "#aaa";
         ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
         ctx.font = "14px Pretendard";
-        ctx.fillText("항목을 추가해주세요", 160, 165);
+        ctx.fillText("항목을 추가해주세요", centerX, centerY);
         return;
     }
 
@@ -73,20 +94,21 @@ function drawWheel(items) {
         const endAngle = (i + 1) * sliceAngle + currentRotation;
 
         ctx.beginPath();
-        ctx.moveTo(160, 160);
-        ctx.arc(160, 160, 150, startAngle, endAngle);
+        ctx.moveTo(centerX, centerY);
+        ctx.arc(centerX, centerY, radius, startAngle, endAngle);
         ctx.fillStyle = `hsla(${(i * 360) / numSlices}, 75%, 90%, 1)`;
         ctx.fill();
         ctx.strokeStyle = "rgba(0,0,0,0.05)";
         ctx.stroke();
 
         ctx.save();
-        ctx.translate(160, 160);
+        ctx.translate(centerX, centerY);
         ctx.rotate(startAngle + sliceAngle / 2);
         ctx.textAlign = "right";
+        ctx.textBaseline = "middle";
         ctx.fillStyle = "#333";
-        ctx.font = "bold 15px Pretendard";
-        ctx.fillText(item, 140, 6);
+        ctx.font = `bold ${Math.max(11, Math.min(15, radius * 0.12))}px Pretendard`;
+        ctx.fillText(item, textRadius, 0);
         ctx.restore();
     });
 }
@@ -96,6 +118,7 @@ function selectCategory(type) {
     const section = document.getElementById('roulette-section');
     const customArea = document.getElementById('custom-input-area');
     section.style.display = 'block';
+    resizeCanvas();
     
     // 사용자 지정일 때만 입력창 노출
     if (type === 'custom') {

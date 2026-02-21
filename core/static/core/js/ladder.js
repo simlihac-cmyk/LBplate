@@ -23,23 +23,10 @@ document.addEventListener('DOMContentLoaded', () => {
         increasePlayerBtn.addEventListener('click', () => adjustCount(1));
     }
 
-    // Canvas 해상도 조정 (선명하게)
-    function resizeCanvas() {
-        const parent = canvas.parentElement;
-        canvas.width = parent.offsetWidth;
-        canvas.height = 500;
-    }
-    
-    // 초기화 및 리사이즈 이벤트
-    resizeCanvas();
-    window.addEventListener('resize', () => { 
-        if(!btnStart.disabled && btnGenerate.disabled) resizeCanvas(); // 게임 진행중이 아닐때만
-    });
-
     let game = {
         players: 0,
         width: 0,
-        height: 500,
+        height: 0,
         bridges: [],
         step: 0,
         paddingX: 50,
@@ -50,6 +37,39 @@ document.addEventListener('DOMContentLoaded', () => {
             '#51cf66', '#94d82d', '#fcc419', '#ff922b'
         ]
     };
+    let isAnimating = false;
+    let finishedTraceCount = 0;
+
+    // Canvas 해상도 조정 (선명하게)
+    function resizeCanvas() {
+        const parent = canvas.parentElement;
+        const parentWidth = parent ? parent.offsetWidth : 0;
+        const viewportWidth = window.innerWidth || 1024;
+        let targetHeight = 500;
+        if (viewportWidth <= 640) targetHeight = 320;
+        else if (viewportWidth <= 900) targetHeight = 400;
+
+        canvas.width = Math.max(280, parentWidth);
+        canvas.height = targetHeight;
+        game.height = targetHeight;
+    }
+
+    function updateDrawMetrics() {
+        game.width = canvas.width;
+        const drawWidth = game.width - (game.paddingX * 2);
+        game.step = game.players > 1 ? drawWidth / (game.players - 1) : 0;
+    }
+
+    // 초기화 및 리사이즈 이벤트
+    resizeCanvas();
+    window.addEventListener('resize', () => {
+        if (isAnimating) return;
+        resizeCanvas();
+        if (game.players > 1) {
+            updateDrawMetrics();
+            if (game.bridges.length > 0) drawLadder();
+        }
+    });
 
     // 1. 설정 완료 (입력창 생성)
     btnConfirm.addEventListener('click', () => {
@@ -83,10 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 2. 사다리 생성
     btnGenerate.addEventListener('click', () => {
         resizeCanvas();
-        game.width = canvas.width;
-        
-        const drawWidth = game.width - (game.paddingX * 2);
-        game.step = drawWidth / (game.players - 1);
+        updateDrawMetrics();
 
         createBridges();
         drawLadder();
@@ -99,6 +116,8 @@ document.addEventListener('DOMContentLoaded', () => {
         btnStart.disabled = true;
         btnGenerate.disabled = true;
         btnConfirm.disabled = true; // 게임 중 설정 변경 방지
+        isAnimating = true;
+        finishedTraceCount = 0;
 
         if (window.trackEvent) {
             window.trackEvent('utility_use', {
@@ -262,6 +281,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function finishTrace(resultColIdx, pName, color) {
         const resInput = document.getElementById(`r_${resultColIdx}`);
         const badge = document.getElementById(`badge_${resultColIdx}`);
+        if (!resInput || !badge) return;
         
         // 결과창 테두리 강조
         resInput.style.borderColor = color;
@@ -279,8 +299,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 result_column: resultColIdx + 1,
             });
         }
-        
-        // 모든 참가자 도착 시 리셋 버튼 활성화 로직 등 추가 가능
-        // 현재는 단순 일회성
+
+        finishedTraceCount += 1;
+        if (finishedTraceCount >= game.players) {
+            isAnimating = false;
+        }
     }
 });

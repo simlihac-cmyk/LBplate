@@ -10,15 +10,21 @@
 }
 
 .game-area {
-    flex: 1;
-    min-width: 320px;
-    max-width: 500px;
+    flex: 1 1 460px;
+    min-width: 0;
+    width: min(100%, 500px);
     display: flex;
     flex-direction: column;
     align-items: center;
 }
 
-.rank-area { flex: 1; min-width: 300px; max-height: 500px; overflow-y: auto; }
+.rank-area {
+    flex: 1 1 300px;
+    min-width: 0;
+    width: min(100%, 360px);
+    max-height: 500px;
+    overflow-y: auto;
+}
 .rank-desc { font-size: 0.8rem; color: #86868b; margin-bottom: 10px; }
 
 .rank-header {
@@ -58,8 +64,8 @@
     grid-template-rows: repeat(6, 1fr);
     gap: 5px;
     margin-bottom: 30px;
-    width: 300px;
-    height: 360px;
+    width: min(100%, 300px);
+    aspect-ratio: 5 / 6;
 }
 
 .row {
@@ -97,7 +103,7 @@
     flex-direction: column;
     gap: 8px;
     width: 100%;
-    max-width: 480px;
+    max-width: 500px;
 }
 
 .key-row {
@@ -110,7 +116,9 @@
     background-color: #d3d6da;
     border-radius: 4px;
     padding: 15px 0;
-    width: 40px;
+    flex: 1 1 0;
+    max-width: 42px;
+    min-width: 0;
     font-weight: bold;
     cursor: pointer;
     text-transform: uppercase;
@@ -118,7 +126,11 @@
     font-size: 0.9rem;
     user-select: none;
 }
-.key.wide { width: 60px; font-size: 0.8rem; }
+.key.wide {
+    flex: 1.5 1 0;
+    max-width: 66px;
+    font-size: 0.8rem;
+}
 
 /* 키보드 상태 색상 */
 .key[data-state="correct"] { background-color: #6aaa64; color: white; }
@@ -141,3 +153,70 @@
 .rank-list { list-style: none; padding: 0; }
 .rank-list li { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(0,0,0,0.1); }
 .rank-num { font-weight: bold; color: #007AFF; margin-right: 10px; }
+
+@media (max-width: 980px) {
+    .game-container {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .game-area,
+    .rank-area {
+        width: min(100%, 560px);
+    }
+
+    .rank-area {
+        max-height: none;
+    }
+}
+
+@media (max-width: 640px) {
+    .game-container {
+        padding: 12px;
+        gap: 14px;
+    }
+
+    .wordle-board {
+        gap: 4px;
+    }
+
+    .tile {
+        font-size: 1.6rem;
+        border-width: 1.5px;
+    }
+
+    .keyboard {
+        gap: 6px;
+    }
+
+    .key-row {
+        gap: 4px;
+    }
+
+    .key {
+        padding: 12px 0;
+        font-size: 0.8rem;
+        max-width: 36px;
+    }
+
+    .key.wide {
+        max-width: 52px;
+        font-size: 0.72rem;
+    }
+
+    .rank-header {
+        flex-wrap: wrap;
+    }
+
+    .modal-content {
+        padding: 20px;
+    }
+
+    .modal-btns {
+        flex-direction: column;
+    }
+
+    .modal-btns button {
+        width: 100%;
+    }
+}

@@ -3,53 +3,235 @@
 
 {% block title %}LBplate | Roulette{% endblock %}
 
+{% block extra_head %}
+<style>
+    .roulette-page {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 24px 20px 70px;
+        text-align: center;
+    }
+
+    .roulette-back-link {
+        display: inline-block;
+        margin-bottom: 16px;
+        color: var(--accent-color);
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .roulette-title {
+        margin-bottom: 34px;
+        font-weight: 800;
+        letter-spacing: -1px;
+    }
+
+    .category-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 18px;
+        width: 100%;
+    }
+
+    .category-card {
+        cursor: pointer;
+        text-align: center;
+        align-items: center;
+        min-height: 170px;
+    }
+
+    .category-card .util-icon {
+        align-self: center;
+    }
+
+    #roulette-section {
+        display: none;
+        margin-top: 44px;
+        width: 100%;
+        text-align: center;
+        padding-bottom: 90px;
+    }
+
+    .roulette-divider {
+        border: 0;
+        border-top: 1px solid var(--glass-border);
+        margin-bottom: 32px;
+    }
+
+    #selected-title {
+        margin-bottom: 26px;
+        font-weight: 700;
+    }
+
+    #custom-input-area {
+        display: none;
+        margin-bottom: 26px;
+    }
+
+    .custom-input-row {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    #item-input {
+        padding: 12px 16px;
+        border-radius: 25px;
+        border: 1px solid var(--glass-border);
+        background: var(--glass-bg);
+        width: min(100%, 280px);
+        outline: none;
+    }
+
+    #add-item-button {
+        padding: 12px 20px;
+        border-radius: 25px;
+        border: none;
+        background: var(--text-main);
+        color: var(--bg-color);
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    #item-list {
+        margin-top: 15px;
+        color: var(--text-dim);
+        font-size: 0.9rem;
+        word-break: break-word;
+    }
+
+    .roulette-canvas-wrap {
+        position: relative;
+        width: min(100%, 340px);
+        aspect-ratio: 1 / 1;
+        margin: 0 auto;
+    }
+
+    .roulette-pointer {
+        position: absolute;
+        top: -15px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 10;
+        font-size: 2rem;
+        color: var(--accent-color);
+    }
+
+    #roulette-canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+    }
+
+    #spin-button {
+        margin-top: 30px;
+        padding: 16px 56px;
+        border-radius: 999px;
+        border: none;
+        background: var(--accent-color);
+        color: #fff;
+        font-size: 1.05rem;
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 10px 25px rgba(0, 122, 255, 0.3);
+        transition: transform 0.2s ease;
+    }
+
+    #spin-button:hover {
+        transform: translateY(-2px);
+    }
+
+    #result-display {
+        margin-top: 24px;
+        font-size: clamp(1.2rem, 5vw, 1.8rem);
+        font-weight: 800;
+        color: var(--accent-color);
+        min-height: 2.2rem;
+    }
+
+    @media (max-width: 900px) {
+        .category-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 640px) {
+        .roulette-page {
+            padding: 18px 14px 54px;
+        }
+
+        .category-grid {
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        .category-card {
+            min-height: 130px;
+        }
+
+        .custom-input-row {
+            flex-direction: column;
+        }
+
+        #item-input,
+        #add-item-button,
+        #spin-button {
+            width: 100%;
+            max-width: 320px;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80vh; padding-top: 40px;">
-    <a href="{% url 'utility_home' %}" data-track-event="utility_nav_click" data-track-category="utility" data-track-label="roulette_back_to_hub" style="margin-bottom: 16px; color: var(--accent-color); text-decoration: none; font-weight: 600;">← Utility Hub로 돌아가기</a>
-    <h1 style="margin-bottom: 40px; font-weight: 800; letter-spacing: -1px;">Select Category</h1>
-    
-    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; width: 100%; max-width: 900px;">
-        <div class="card category-card" data-category="lunch" style="cursor: pointer; text-align: center; align-items: center;">
+<div class="roulette-page">
+    <a href="{% url 'utility_home' %}" class="roulette-back-link" data-track-event="utility_nav_click" data-track-category="utility" data-track-label="roulette_back_to_hub">← Utility Hub로 돌아가기</a>
+    <h1 class="roulette-title">Select Category</h1>
+
+    <div class="category-grid">
+        <div class="card category-card" data-category="lunch">
             <span class="card-label">Food</span>
             <div class="card-title">점심메뉴추천</div>
-            <div class="util-icon" style="align-self: center;">🍱</div>
+            <div class="util-icon">🍱</div>
         </div>
 
-        <div class="card category-card" data-category="decision" style="cursor: pointer; text-align: center; align-items: center;">
+        <div class="card category-card" data-category="decision">
             <span class="card-label">Choice</span>
             <div class="card-title">YES or NO</div>
-            <div class="util-icon" style="align-self: center;">⚖️</div>
+            <div class="util-icon">⚖️</div>
         </div>
 
-        <div class="card category-card" data-category="custom" style="cursor: pointer; text-align: center; align-items: center;">
+        <div class="card category-card" data-category="custom">
             <span class="card-label">Manual</span>
             <div class="card-title">사용자 지정</div>
-            <div class="util-icon" style="align-self: center;">🛠️</div>
+            <div class="util-icon">🛠️</div>
         </div>
     </div>
 
-    <div id="roulette-section" style="display: none; margin-top: 50px; width: 100%; text-align: center; padding-bottom: 100px;">
-        <hr style="border: 0; border-top: 1px solid var(--glass-border); margin-bottom: 40px;">
-        <h2 id="selected-title" style="margin-bottom: 30px; font-weight: 700;"></h2>
-        
-        <div id="custom-input-area" style="display: none; margin-bottom: 30px;">
-            <input type="text" id="item-input" placeholder="항목 입력 (예: 커피 내기)" 
-                   style="padding: 12px 20px; border-radius: 25px; border: 1px solid var(--glass-border); background: var(--glass-bg); width: 250px; outline: none;">
-            <button id="add-item-button" type="button"
-                    style="padding: 12px 25px; border-radius: 25px; border: none; background: var(--text-main); color: var(--bg-color); font-weight: 600; cursor: pointer; margin-left: 10px;">추가</button>
-            <div id="item-list" style="margin-top: 15px; color: var(--text-dim); font-size: 0.9rem;"></div>
+    <div id="roulette-section">
+        <hr class="roulette-divider">
+        <h2 id="selected-title"></h2>
+
+        <div id="custom-input-area">
+            <div class="custom-input-row">
+                <input type="text" id="item-input" placeholder="항목 입력 (예: 커피 내기)">
+                <button id="add-item-button" type="button">추가</button>
+            </div>
+            <div id="item-list"></div>
         </div>
 
-        <div style="position: relative; width: 320px; height: 320px; margin: 0 auto;">
-            <div style="position: absolute; top: -15px; left: 50%; transform: translateX(-50%); z-index: 10; font-size: 2rem; color: var(--accent-color);">▼</div>
+        <div class="roulette-canvas-wrap">
+            <div class="roulette-pointer">▼</div>
             <canvas id="roulette-canvas" width="320" height="320"></canvas>
         </div>
 
-        <button id="spin-button" type="button" style="margin-top: 40px; padding: 18px 60px; border-radius: 50px; border: none; background: var(--accent-color); color: white; font-size: 1.1rem; font-weight: 700; cursor: pointer; box-shadow: 0 10px 25px rgba(0,122,255,0.3); transition: 0.3s;">
+        <button id="spin-button" type="button">
             SPIN!
         </button>
-        
-        <div id="result-display" style="margin-top: 30px; font-size: 1.8rem; font-weight: 800; color: var(--accent-color); min-height: 2.5rem;"></div>
+
+        <div id="result-display"></div>
     </div>
 </div>
 {% endblock %}

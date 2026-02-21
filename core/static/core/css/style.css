@@ -331,6 +331,10 @@ main {
 
 /* 모바일 (640px 이하) */
 @media (max-width: 640px) {
+    body {
+        background-attachment: scroll;
+    }
+
     nav {
         padding: 1rem 16px;
         flex-direction: column;
