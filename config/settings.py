@@ -208,6 +208,20 @@ GOOGLE_OAUTH_CLIENT_SECRET = os.getenv('GOOGLE_OAUTH_CLIENT_SECRET', '')
 GOOGLE_OAUTH_REDIRECT_URI = os.getenv('GOOGLE_OAUTH_REDIRECT_URI', '')
 GOOGLE_OAUTH_TIMEOUT = int(os.getenv('GOOGLE_OAUTH_TIMEOUT', '8'))
 GA4_MEASUREMENT_ID = os.getenv('GA4_MEASUREMENT_ID', '')
+_raw_adsense_publisher = os.getenv('ADSENSE_PUBLISHER_ID', '').strip()
+if _raw_adsense_publisher.startswith('ca-pub-'):
+    ADSENSE_CLIENT_ID = _raw_adsense_publisher
+    ADSENSE_PUBLISHER_ID = _raw_adsense_publisher.replace('ca-', '', 1)
+elif _raw_adsense_publisher.startswith('pub-'):
+    ADSENSE_PUBLISHER_ID = _raw_adsense_publisher
+    ADSENSE_CLIENT_ID = f'ca-{_raw_adsense_publisher}'
+elif _raw_adsense_publisher.isdigit():
+    ADSENSE_PUBLISHER_ID = f'pub-{_raw_adsense_publisher}'
+    ADSENSE_CLIENT_ID = f'ca-pub-{_raw_adsense_publisher}'
+else:
+    ADSENSE_PUBLISHER_ID = ''
+    ADSENSE_CLIENT_ID = ''
+ADSENSE_ADS_TXT_ENTRY = os.getenv('ADSENSE_ADS_TXT_ENTRY', '').strip()
 MAX_2048_SCORE = int(os.getenv('MAX_2048_SCORE', '2000000'))
 MIN_REACTION_SCORE = int(os.getenv('MIN_REACTION_SCORE', '50'))
 MAX_REACTION_SCORE = int(os.getenv('MAX_REACTION_SCORE', '3000'))

@@ -16,11 +16,17 @@
     <meta property="og:image" content="{% static 'core/img/favicon.png' %}">
     <meta property="og:url" content="{{ request.build_absolute_uri }}">
     <meta property="og:type" content="website">
+    {% if ADSENSE_CLIENT_ID %}
+    <meta name="google-adsense-account" content="{{ ADSENSE_CLIENT_ID }}">
+    {% endif %}
     
     <link rel="icon" type="image/png" href="{% static 'core/img/favicon.png' %}">
     <link rel="apple-touch-icon" href="{% static 'core/img/favicon.png' %}">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
     <link rel="stylesheet" href="{% static 'core/css/style.css' %}?v=1.2">
+    {% if ADSENSE_CLIENT_ID %}
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ ADSENSE_CLIENT_ID }}" crossorigin="anonymous"></script>
+    {% endif %}
     
     {% block extra_css %}{% endblock %}
     {% block extra_head %}{% endblock %}

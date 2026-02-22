@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.conf import settings
 from django.http import HttpResponse
 from django.urls import path
 from django.contrib.sitemaps.views import sitemap
@@ -43,6 +44,18 @@ def robots_txt(request):
         "Sitemap: https://monosaccharide180.com/sitemap.xml",
     ]
     return HttpResponse("\n".join(lines), content_type="text/plain")
+
+
+def ads_txt(request):
+    line = getattr(settings, 'ADSENSE_ADS_TXT_ENTRY', '').strip()
+    if not line:
+        publisher_id = getattr(settings, 'ADSENSE_PUBLISHER_ID', '').strip()
+        if publisher_id:
+            line = f"google.com, {publisher_id}, DIRECT, f08c47fec0942fa0"
+    if not line:
+        line = "# ads.txt is not configured yet"
+    return HttpResponse(f"{line}\n", content_type="text/plain")
+
 
 sitemaps_dict = {
     'static': StaticViewSitemap,
@@ -98,6 +111,7 @@ urlpatterns = [
     
     # robots.txt와 sitemap.xml 경로 추가
     path("robots.txt", robots_txt),
+    path("ads.txt", ads_txt),
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps_dict}, name='django.contrib.sitemaps.views.sitemap'),
     path('rss.xml', WordPressPostFeed(), name='rss_feed'),
     

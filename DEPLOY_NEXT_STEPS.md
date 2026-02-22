@@ -33,6 +33,8 @@ Required values in `.env.production`:
 - `WP_SITEMAP_CACHE_TIMEOUT=3600`
 - `DJANGO_USE_X_FORWARDED_PROTO=true`
 - `GA4_MEASUREMENT_ID=G-XXXXXXXXXX`  # 사용하지 않으면 비워도 됨
+- `ADSENSE_PUBLISHER_ID=pub-XXXXXXXXXXXXXXXX`  # 승인 후 pub ID 입력
+- `ADSENSE_ADS_TXT_ENTRY=`  # 일반적으로 비워둠(자동 생성)
 
 ## 2) Daily workflow (Dev -> Git -> Deploy)
 
@@ -157,4 +159,5 @@ Validation:
 curl -I -L --max-time 20 https://monosaccharide180.com/sitemap.xml
 curl -I -L --max-time 20 https://monosaccharide180.com/rss.xml
 curl -I -L --max-time 20 https://monosaccharide180.com/robots.txt
+curl -sS -L --max-time 20 https://monosaccharide180.com/ads.txt
 ```
