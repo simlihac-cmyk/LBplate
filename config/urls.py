@@ -4,6 +4,27 @@ from django.urls import path
 from django.contrib.sitemaps.views import sitemap
 from core.feeds import WordPressPostFeed
 from core.sitemaps import StaticViewSitemap, WordPressPostSitemap
+from core.auth_views import (
+    google_callback,
+    google_login_start,
+    login_view,
+    logout_view,
+    signup_view,
+)
+from core.community_views import (
+    community_hub,
+    discussion_message_create,
+    discussion_topic_detail,
+    discussion_topic_list,
+    free_board_comment_create,
+    free_board_comment_delete,
+    free_board_comment_edit,
+    free_board_create,
+    free_board_delete,
+    free_board_detail,
+    free_board_edit,
+    free_board_list,
+)
 from core.views import (
     home, blog_home, roulette, post_detail, ladder, utility_home,
     game_2048, api_2048_rank, games_lobby,
@@ -32,7 +53,24 @@ sitemaps_dict = {
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', home, name='home'),
+    path('auth/login/', login_view, name='login'),
+    path('auth/signup/', signup_view, name='signup'),
+    path('auth/logout/', logout_view, name='logout'),
+    path('auth/google/start/', google_login_start, name='google_login_start'),
+    path('auth/google/callback/', google_callback, name='google_callback'),
     path('blog/', blog_home, name='blog_home'),
+    path('community/', community_hub, name='community_hub'),
+    path('community/free/', free_board_list, name='free_board_list'),
+    path('community/free/new/', free_board_create, name='free_board_create'),
+    path('community/free/<int:post_id>/', free_board_detail, name='free_board_detail'),
+    path('community/free/<int:post_id>/edit/', free_board_edit, name='free_board_edit'),
+    path('community/free/<int:post_id>/delete/', free_board_delete, name='free_board_delete'),
+    path('community/free/<int:post_id>/comments/', free_board_comment_create, name='free_board_comment_create'),
+    path('community/comments/<int:comment_id>/edit/', free_board_comment_edit, name='free_board_comment_edit'),
+    path('community/comments/<int:comment_id>/delete/', free_board_comment_delete, name='free_board_comment_delete'),
+    path('community/discussion/', discussion_topic_list, name='discussion_topic_list'),
+    path('community/discussion/<str:slug>/', discussion_topic_detail, name='discussion_topic_detail'),
+    path('community/discussion/<str:slug>/messages/', discussion_message_create, name='discussion_message_create'),
     path('utility/', utility_home, name='utility_home'),
     path('roulette/', roulette, name='roulette'),
     path('post/<int:post_id>/', post_detail, name='post_detail'),

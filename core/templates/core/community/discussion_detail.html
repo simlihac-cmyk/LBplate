@@ -1,0 +1,55 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}{{ topic.title }} - 토론방{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'core/css/community.css' %}?v=1.0">{% endblock %}
+
+{% block content %}
+<section class="community-shell narrow-shell">
+    <article class="post-detail-card">
+        <header class="post-detail-head">
+            <p class="community-kicker">Discussion Topic</p>
+            <h1>{{ topic.title }}</h1>
+            <p class="topic-description">{{ topic.description|linebreaksbr }}</p>
+            <div class="post-meta">
+                <span>{{ topic.created_at|date:'Y-m-d H:i' }}</span>
+                {% if topic.is_locked %}<span>잠김</span>{% endif %}
+            </div>
+        </header>
+
+        <footer class="post-footer">
+            <a href="{% url 'discussion_topic_list' %}" class="btn-secondary">목록으로</a>
+        </footer>
+    </article>
+
+    <section class="comment-section" id="discussion-messages">
+        <header class="section-head">
+            <h2>의견</h2>
+        </header>
+
+        {% if topic.is_locked and not user.is_staff %}
+            <p class="login-hint">이 주제는 잠겨 있어 새 의견을 등록할 수 없습니다.</p>
+        {% else %}
+            <form method="post" action="{% url 'discussion_message_create' topic.slug %}" class="comment-form">
+                {% csrf_token %}
+                {{ message_form.content }}
+                <button type="submit" class="btn-primary">의견 등록</button>
+            </form>
+        {% endif %}
+
+        <div class="comment-list">
+            {% for message in messages_qs %}
+                <article class="comment-item">
+                    <div class="comment-meta">
+                        <strong>{{ message.author.username }}</strong>
+                        <span>{{ message.created_at|date:'Y-m-d H:i' }}</span>
+                    </div>
+                    <div class="comment-content">{{ message.display_content|linebreaksbr }}</div>
+                </article>
+            {% empty %}
+                <p class="empty-text">아직 등록된 의견이 없습니다.</p>
+            {% endfor %}
+        </div>
+    </section>
+</section>
+{% endblock %}

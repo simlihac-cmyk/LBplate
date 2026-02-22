@@ -36,9 +36,11 @@ nav {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 14px;
     padding: 2rem 5%;
     max-width: 1200px;
     margin: 0 auto;
+    flex-wrap: wrap;
 }
 
 .logo { 
@@ -50,6 +52,7 @@ nav {
 .nav-links {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
 }
 
 .nav-links a { 
@@ -59,6 +62,74 @@ nav {
     font-size: 0.95rem; 
     font-weight: 500;
     transition: 0.3s; 
+}
+
+.nav-auth {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nav-user {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+}
+
+.inline-logout-form {
+    margin: 0;
+}
+
+.nav-auth-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-main);
+    text-decoration: none;
+    background: rgba(255, 255, 255, 0.65);
+    cursor: pointer;
+}
+
+.nav-auth-signup {
+    background: rgba(0, 122, 255, 0.14);
+    color: var(--accent-color);
+    border-color: rgba(0, 122, 255, 0.25);
+}
+
+.flash-wrap {
+    max-width: 1200px;
+    margin: 0 auto 14px;
+    padding: 0 20px;
+    display: grid;
+    gap: 8px;
+}
+
+.flash-message {
+    border-radius: 14px;
+    padding: 10px 14px;
+    font-size: 0.87rem;
+    border: 1px solid transparent;
+    background: rgba(245, 250, 255, 0.85);
+    color: #1d1d1f;
+}
+
+.flash-message.success {
+    border-color: rgba(42, 148, 74, 0.2);
+    background: rgba(223, 249, 232, 0.85);
+}
+
+.flash-message.error {
+    border-color: rgba(220, 38, 38, 0.2);
+    background: rgba(254, 226, 226, 0.85);
+}
+
+.flash-message.info {
+    border-color: rgba(59, 130, 246, 0.2);
+    background: rgba(219, 234, 254, 0.82);
 }
 
 main {
@@ -353,6 +424,14 @@ main {
     .nav-links a {
         margin-left: 0;
         padding: 0.25rem 0.5rem;
+    }
+
+    .nav-auth {
+        width: 100%;
+    }
+
+    .flash-wrap {
+        padding: 0 16px;
     }
 
     .container {

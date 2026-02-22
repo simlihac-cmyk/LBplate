@@ -1,0 +1,113 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}{{ post.title }} - 자유게시판{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'core/css/community.css' %}?v=1.0">{% endblock %}
+
+{% block content %}
+<section class="community-shell narrow-shell">
+    <article class="post-detail-card">
+        <header class="post-detail-head">
+            <p class="community-kicker">Free Board</p>
+            <h1>{{ post.title }}</h1>
+            <div class="post-meta">
+                <span>{{ post.author.username }}</span>
+                <span>{{ post.created_at|date:'Y-m-d H:i' }}</span>
+                <span>조회 {{ post.view_count }}</span>
+            </div>
+
+            {% if user == post.author or user.is_staff %}
+            <div class="post-owner-actions">
+                <a href="{% url 'free_board_edit' post.pk %}" class="btn-secondary">수정</a>
+                <form method="post" action="{% url 'free_board_delete' post.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-danger" onclick="return confirm('게시글을 삭제할까요?')">삭제</button>
+                </form>
+            </div>
+            {% endif %}
+        </header>
+
+        <div class="post-body">{{ post.content|linebreaksbr }}</div>
+
+        <footer class="post-footer">
+            <a href="{% url 'free_board_list' %}" class="btn-secondary">목록으로</a>
+        </footer>
+    </article>
+
+    <section class="comment-section" id="comments">
+        <header class="section-head">
+            <h2>댓글</h2>
+        </header>
+
+        {% if can_write %}
+        <form method="post" action="{% url 'free_board_comment_create' post.pk %}" class="comment-form">
+            {% csrf_token %}
+            {{ comment_form.content }}
+            <button type="submit" class="btn-primary">댓글 등록</button>
+        </form>
+        {% else %}
+            <p class="login-hint">댓글 작성을 위해 <a href="{% url 'login' %}?next={{ request.get_full_path|urlencode }}">로그인</a>이 필요합니다.</p>
+        {% endif %}
+
+        <div class="comment-list">
+            {% for comment in root_comments %}
+                <article class="comment-item" id="comment-{{ comment.pk }}">
+                    <div class="comment-meta">
+                        <strong>{{ comment.author.username }}</strong>
+                        <span>{{ comment.created_at|date:'Y-m-d H:i' }}</span>
+                    </div>
+                    <div class="comment-content">{{ comment.display_content|linebreaksbr }}</div>
+
+                    {% if user == comment.author or user.is_staff %}
+                    <div class="comment-actions">
+                        <form method="post" action="{% url 'free_board_comment_edit' comment.pk %}" class="inline-edit-form">
+                            {% csrf_token %}
+                            <textarea name="content" rows="2">{{ comment.content }}</textarea>
+                            <button type="submit" class="btn-secondary small">수정</button>
+                        </form>
+                        <form method="post" action="{% url 'free_board_comment_delete' comment.pk %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-danger small" onclick="return confirm('댓글을 삭제할까요?')">삭제</button>
+                        </form>
+                    </div>
+                    {% endif %}
+
+                    {% if can_write and not comment.is_deleted %}
+                    <form method="post" action="{% url 'free_board_comment_create' post.pk %}" class="reply-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="parent_id" value="{{ comment.pk }}">
+                        <textarea name="content" rows="2" placeholder="답글을 남겨보세요"></textarea>
+                        <button type="submit" class="btn-secondary small">답글 등록</button>
+                    </form>
+                    {% endif %}
+
+                    {% for reply in comment.children.all %}
+                        <div class="reply-item" id="comment-{{ reply.pk }}">
+                            <div class="comment-meta">
+                                <strong>{{ reply.author.username }}</strong>
+                                <span>{{ reply.created_at|date:'Y-m-d H:i' }}</span>
+                            </div>
+                            <div class="comment-content">{{ reply.display_content|linebreaksbr }}</div>
+                            {% if user == reply.author or user.is_staff %}
+                            <div class="comment-actions">
+                                <form method="post" action="{% url 'free_board_comment_edit' reply.pk %}" class="inline-edit-form">
+                                    {% csrf_token %}
+                                    <textarea name="content" rows="2">{{ reply.content }}</textarea>
+                                    <button type="submit" class="btn-secondary small">수정</button>
+                                </form>
+                                <form method="post" action="{% url 'free_board_comment_delete' reply.pk %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-danger small" onclick="return confirm('댓글을 삭제할까요?')">삭제</button>
+                                </form>
+                            </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </article>
+            {% empty %}
+                <p class="empty-text">첫 댓글을 남겨보세요.</p>
+            {% endfor %}
+        </div>
+    </section>
+</section>
+{% endblock %}

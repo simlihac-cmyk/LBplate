@@ -157,6 +157,13 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+]
+LOGIN_URL = '/auth/login/'
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
@@ -196,6 +203,10 @@ WP_REQUEST_TIMEOUT = int(os.getenv('WP_REQUEST_TIMEOUT', '5'))
 WP_CACHE_TIMEOUT = int(os.getenv('WP_CACHE_TIMEOUT', '300'))
 WP_SITEMAP_CACHE_TIMEOUT = int(os.getenv('WP_SITEMAP_CACHE_TIMEOUT', '3600'))
 WP_BASE_URL = os.getenv('WP_BASE_URL', 'http://127.0.0.1:4080/wp-json/wp/v2')
+GOOGLE_OAUTH_CLIENT_ID = os.getenv('GOOGLE_OAUTH_CLIENT_ID', '')
+GOOGLE_OAUTH_CLIENT_SECRET = os.getenv('GOOGLE_OAUTH_CLIENT_SECRET', '')
+GOOGLE_OAUTH_REDIRECT_URI = os.getenv('GOOGLE_OAUTH_REDIRECT_URI', '')
+GOOGLE_OAUTH_TIMEOUT = int(os.getenv('GOOGLE_OAUTH_TIMEOUT', '8'))
 GA4_MEASUREMENT_ID = os.getenv('GA4_MEASUREMENT_ID', '')
 MAX_2048_SCORE = int(os.getenv('MAX_2048_SCORE', '2000000'))
 MIN_REACTION_SCORE = int(os.getenv('MIN_REACTION_SCORE', '50'))

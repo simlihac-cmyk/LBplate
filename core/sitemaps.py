@@ -49,6 +49,7 @@ class StaticViewSitemap(Sitemap):
         return [
             'home',
             'blog_home',
+            'free_board_list',
             'utility_home',
             'games_lobby',
             'game_2048',

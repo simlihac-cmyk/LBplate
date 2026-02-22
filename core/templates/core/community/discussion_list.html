@@ -1,0 +1,36 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}토론방 - 미생물의 똑똑한 하루{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'core/css/community.css' %}?v=1.0">{% endblock %}
+
+{% block content %}
+<section class="community-shell">
+    <header class="community-hero">
+        <p class="community-kicker">Discussion</p>
+        <h1>토론방</h1>
+        <p>로그인 회원만 접근할 수 있는 주제형 토론 공간입니다. 주제는 운영자가 미리 생성합니다.</p>
+    </header>
+
+    <div class="discussion-grid">
+        {% for topic in topics %}
+            <a href="{% url 'discussion_topic_detail' topic.slug %}" class="discussion-card">
+                <div class="topic-head">
+                    {% if topic.is_pinned %}<span class="badge">고정</span>{% endif %}
+                    {% if topic.is_locked %}<span class="badge muted">잠김</span>{% endif %}
+                </div>
+                <h2>{{ topic.title }}</h2>
+                <p>{{ topic.description|default:'설명이 아직 등록되지 않았습니다.'|truncatechars:120 }}</p>
+                <div class="post-meta">
+                    <span>의견 {{ topic.message_count }}</span>
+                    <span>{{ topic.created_at|date:'Y-m-d' }}</span>
+                </div>
+            </a>
+        {% empty %}
+            <div class="empty-card">
+                <p>아직 등록된 토론 주제가 없습니다.</p>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

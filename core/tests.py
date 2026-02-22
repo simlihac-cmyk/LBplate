@@ -4,11 +4,19 @@ import os
 import tempfile
 import requests
 from unittest.mock import patch
+from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
-from .models import GameRecord, KkomantleDailySnapshot
+from .models import (
+    DiscussionMessage,
+    DiscussionTopic,
+    FreeBoardComment,
+    FreeBoardPost,
+    GameRecord,
+    KkomantleDailySnapshot,
+)
 from . import views
 from .management.commands.build_kkomantle_whitelist import (
     normalize_dict_word,
@@ -441,5 +449,85 @@ class CoreViewTests(TestCase):
         self.assertEqual(submit_response.json()['status'], 'success')
         self.assertEqual(
             GameRecord.objects.filter(game_type='kkomantle_challenge', score=0).count(),
+            1,
+        )
+
+    def test_signup_creates_user_and_logs_in(self):
+        response = self.client.post(
+            reverse('signup'),
+            data={
+                'username': 'newmember',
+                'email': 'newmember@example.com',
+                'password1': 'StrongPass!12345',
+                'password2': 'StrongPass!12345',
+            },
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(get_user_model().objects.filter(username='newmember').exists())
+        self.assertIn('_auth_user_id', self.client.session)
+
+    def test_free_board_list_is_public_read(self):
+        user = get_user_model().objects.create_user('reader', password='ReadPass!123')
+        FreeBoardPost.objects.create(
+            title='첫 자유글',
+            content='로그인 없이도 읽을 수 있어야 합니다.',
+            author=user,
+        )
+
+        response = self.client.get(reverse('free_board_list'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '첫 자유글')
+
+    def test_free_board_create_requires_login(self):
+        response = self.client.get(reverse('free_board_create'))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/auth/login/', response['Location'])
+
+    def test_logged_in_user_can_create_post_and_comment(self):
+        user = get_user_model().objects.create_user('writer', password='WritePass!123')
+        self.client.force_login(user)
+
+        create_response = self.client.post(
+            reverse('free_board_create'),
+            data={'title': '작성 테스트', 'content': '본문 테스트 내용'},
+        )
+        self.assertEqual(create_response.status_code, 302)
+
+        post = FreeBoardPost.objects.get(title='작성 테스트')
+        comment_response = self.client.post(
+            reverse('free_board_comment_create', args=[post.pk]),
+            data={'content': '첫 댓글'},
+        )
+
+        self.assertEqual(comment_response.status_code, 302)
+        self.assertEqual(FreeBoardComment.objects.filter(post=post).count(), 1)
+
+    def test_discussion_list_requires_login(self):
+        response = self.client.get(reverse('discussion_topic_list'))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/auth/login/', response['Location'])
+
+    def test_logged_in_user_can_write_discussion_message(self):
+        user = get_user_model().objects.create_user('debater', password='DebatePass!123')
+        topic = DiscussionTopic.objects.create(
+            title='항생제 내성 문제',
+            description='예방 전략에 대해 토론해봅시다.',
+            created_by=user,
+        )
+
+        self.client.force_login(user)
+        response = self.client.post(
+            reverse('discussion_message_create', args=[topic.slug]),
+            data={'content': '병원 내 감염 관리와 처방 최적화가 중요합니다.'},
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(
+            DiscussionMessage.objects.filter(topic=topic, author=user).count(),
             1,
         )

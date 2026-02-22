@@ -33,12 +33,35 @@
         
         <div class="nav-links">
             <a href="{% url 'blog_home' %}" data-track-event="nav_click" data-track-category="navigation" data-track-label="blog">Blog</a>
+            <a href="{% url 'free_board_list' %}" data-track-event="nav_click" data-track-category="navigation" data-track-label="free_board">Free Board</a>
+            <a href="{% url 'discussion_topic_list' %}" data-track-event="nav_click" data-track-category="navigation" data-track-label="discussion">Discussion</a>
             
             <a href="{% url 'utility_home' %}" data-track-event="nav_click" data-track-category="navigation" data-track-label="utility">Utility</a>
             
             <a href="{% url 'games_lobby' %}" data-track-event="nav_click" data-track-category="navigation" data-track-label="games">Games</a>
         </div>
+
+        <div class="nav-auth">
+            {% if user.is_authenticated %}
+                <span class="nav-user">{{ user.username }}</span>
+                <form method="post" action="{% url 'logout' %}" class="inline-logout-form">
+                    {% csrf_token %}
+                    <button type="submit" class="nav-auth-btn">로그아웃</button>
+                </form>
+            {% else %}
+                <a href="{% url 'login' %}?next={{ request.get_full_path|urlencode }}" class="nav-auth-btn">로그인</a>
+                <a href="{% url 'signup' %}?next={{ request.get_full_path|urlencode }}" class="nav-auth-btn nav-auth-signup">회원가입</a>
+            {% endif %}
+        </div>
     </nav>
+
+    {% if messages %}
+    <div class="flash-wrap">
+        {% for message in messages %}
+            <div class="flash-message {{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
 
     <main>
         {% block content %}
