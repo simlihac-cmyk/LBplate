@@ -34,6 +34,19 @@ KKOMANTLE_CHALLENGE_GAME_TYPE = 'kkomantle_challenge'
 KKOMANTLE_CHALLENGE_SESSION_KEY = 'kkomantle_challenge_state'
 KKOMANTLE_CHALLENGE_MAX_ATTEMPTS = max(1, int(getattr(settings, 'KKOMANTLE_CHALLENGE_MAX_ATTEMPTS', 10)))
 KKOMANTLE_CHALLENGE_RANK_LIMIT = max(1, int(getattr(settings, 'KKOMANTLE_CHALLENGE_RANK_LIMIT', 10)))
+_raw_daily_hint_ranks = getattr(settings, 'KKOMANTLE_DAILY_HINT_RANKS', '200,100,50')
+if isinstance(_raw_daily_hint_ranks, str):
+    _parsed_daily_hint_ranks = []
+    for token in _raw_daily_hint_ranks.split(','):
+        token = token.strip()
+        if token.isdigit():
+            _parsed_daily_hint_ranks.append(max(1, int(token)))
+    KKOMANTLE_DAILY_HINT_RANKS = tuple(_parsed_daily_hint_ranks[:3]) if _parsed_daily_hint_ranks else (200, 100, 50)
+else:
+    try:
+        KKOMANTLE_DAILY_HINT_RANKS = tuple(max(1, int(x)) for x in _raw_daily_hint_ranks)[:3]
+    except Exception:
+        KKOMANTLE_DAILY_HINT_RANKS = (200, 100, 50)
 _raw_hint_ranks = getattr(settings, 'KKOMANTLE_CHALLENGE_HINT_RANKS', '25,30,35')
 if isinstance(_raw_hint_ranks, str):
     _parsed_hint_ranks = []
@@ -561,7 +574,7 @@ def api_kkomantle_hint(request):
     except Exception:
         return JsonResponse({'result': 'error', 'message': '잘못된 요청 형식입니다.'}, status=400)
 
-    hint_ranks = (1000, 500, 250)
+    hint_ranks = KKOMANTLE_DAILY_HINT_RANKS
     if step < 1 or step > len(hint_ranks):
         return JsonResponse({'result': 'fail', 'message': '더 이상 사용할 수 있는 힌트가 없어요.'}, status=400)
 

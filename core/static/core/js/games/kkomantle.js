@@ -23,7 +23,7 @@ const historyCloseBtn = document.getElementById('historyCloseBtn');
 const historyMeta = document.getElementById('historyMeta');
 const historyList = document.getElementById('historyList');
 
-const HINT_RANKS = [1000, 500, 250];
+const HINT_RANKS = [200, 100, 50];
 
 let guesses = [];
 let isGameOver = false;
